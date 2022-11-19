@@ -6,7 +6,7 @@ class Grid2D:
         self.kernel = kernel
         self._patch = Patch(x0y0=start_coord, x1y1=end_coord)
         self._subgrids = self._get_nonoverlapping_subgrids()
-        self._patch_set = {patch for row in self._subgrids for patch in row}
+        self.patch_set = {patch for row in self._subgrids for patch in row}
         self.shape = (len(self._subgrids), len(self._subgrids[0]))
     
     def __getitem__(self, index):
