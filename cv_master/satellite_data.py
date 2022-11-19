@@ -8,7 +8,7 @@ from .grid import Grid2D
 class SatelliteImageData:
     START_COORD = Coordinate(65, 2)
     END_COORD = Coordinate(369, 383)
-    BASE_DIR = './data/'
+    BASE_DIR = os.path.join(os.path.split(__file__)[0], 'data/')
     COLUMNES = ['y', 'x', 'label', 'ndai', 'sd', 'corr', 'ra_df', 'ra_cf', 'ra_bf', 'ra_af', 'ra_an']
 
     def __init__(self, kernel: Grid2DKernel, images: List[str] = None):
