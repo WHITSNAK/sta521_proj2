@@ -1,4 +1,5 @@
 from typing import List, Tuple, Set, Generator
+
 from .dataclass import Coordinate, Grid2DKernel, Patch
 
 class Grid2D:

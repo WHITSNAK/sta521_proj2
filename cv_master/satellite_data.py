@@ -1,21 +1,25 @@
 import os
 import pandas as pd
 from typing import List, Tuple, Set, Generator
-from cv_master import Patch, Grid2D
 
+from .dataclass import Patch, Coordinate, Grid2DKernel
+from .grid import Grid2D
 
 class SatelliteImageData:
+    START_COORD = Coordinate(65, 2)
+    END_COORD = Coordinate(369, 383)
     BASE_DIR = './data/'
     COLUMNES = ['y', 'x', 'label', 'ndai', 'sd', 'corr', 'ra_df', 'ra_cf', 'ra_bf', 'ra_af', 'ra_an']
 
-    def __init__(self, overlaying_grid: Grid2D, images: List[str] = None):
+    def __init__(self, kernel: Grid2DKernel, images: List[str] = None):
         """
         Parameters
         ----------
-        overlaying_grid: The Grid with Kernel that overlays the image used for splitting
-        images: 
+        kernel: The Grid Kernel for splitting purposes
+        images: The list of images names to read in, default to all 3 images
         """
-        self.grid = overlaying_grid
+        # the overlaying grid with kernel and default starting and ending coordinates for images
+        self.grid = Grid2D(SatelliteImageData.START_COORD, SatelliteImageData.END_COORD, kernel)
         self.df = self._read_data(images)
         self.images = images
     
