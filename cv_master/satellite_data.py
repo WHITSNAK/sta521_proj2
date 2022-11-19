@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 from typing import List, Tuple, Set, Generator
+from functools import lru_cache
 
 from .dataclass import Patch, Coordinate, Grid2DKernel
 from .grid import Grid2D
@@ -38,6 +39,7 @@ class SatelliteImageData:
         data.sort_values(['x', 'y'], inplace=True)
         return data
 
+    @lru_cache(maxsize=150000)
     def get_data_patch(self, patch: Patch) -> pd.DataFrame:
         """Map the image data to the corresponding patch coordinates"""
         df = self.df
