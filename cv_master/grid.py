@@ -27,21 +27,6 @@ class Grid2D:
             grid.append(row)
         return grid
     
-    def fully_contains(self, patch: Patch) -> bool:
-        """Make sure the other patch is fully contained in this grid"""
-        (my_x_lb, my_x_ub) = self._patch.x_bound
-        (other_x_lb, other_x_ub) = patch.x_bound
-
-        (my_y_lb, my_y_ub) = self._patch.y_bound
-        (other_y_lb, other_y_ub) = patch.y_bound
-
-        return (
-            (my_x_lb <= other_x_lb)
-            & (my_x_ub >= other_x_ub)
-            & (my_y_lb <= other_y_lb)
-            & (my_y_ub >= other_y_ub)
-        )
-    
     def get_neighbors(self, i, j) -> Set[Patch]:
         """Returns a set of 8 neighboring patches that are within the valid boundary"""
         x_max, y_max = self.shape
