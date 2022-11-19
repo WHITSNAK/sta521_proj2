@@ -35,16 +35,17 @@ Global warming and how surface air temperatures changes has been a general scien
 
 MISR provides Arctic satellite images on each orbit on each path every 16 days interval. Each resulting data unit is an image concentrating on a particular, repeating Arctic location patch. Tao and other members of his team took the time to manually label the data unit with the aid of a labeling algorithm from Jet Propulsion Laboratory, which resulted in 71.5\% of conservative, expert label coverage at the pixel level for evaluating the algorithms, \{-1 = Not Cloudy, 0 = Not Sure, 1 = Cloudy\}. Furthermore, Tao's team introduced ELCM, a cloud detection algorithm based on the three expert-designed features using just if-else hard-coded rules, and utilized Quadratic Discriminant Analysis (QDA) for probabilistic prediction on top of ELCM labels that achieved astonishing results both in terms of precision and recall.
 
-Tao's team introduced three expertly designed features through domain knowledge: CORR, SD, and NDAI. On a high level, these features were constructed through spatial convolution over a small grid under the knowledge that the aggregated radiation from multiple cameras is different between smoothed surfaces, ice and snow, and cloud. We should expect high CORR and small SD over clear or low-altitude cloud areas. NDAI provides a proxy view to the visible wavelength where we should expect smaller, less volatile measures for ice and snow-covered surface than low-altitude clouds to further aid in distinguishing between the surface area from the low-altitude cloud. 
+Tao's team introduced three expertly designed features through domain knowledge: CORR, SD, and NDAI. On a high level, these features were constructed through spatial convolution over a small grid under the knowledge that the aggregated radiation from multiple cameras is different between smoothed surfaces, ice and snow, and cloud. We should expect high CORR and small SD over clear or low-altitude cloud areas. NDAI provides a proxy to the visible wavelength where we should expect smaller, less volatile measures for ice and snow-covered surface than low-altitude clouds to further aid in distinguishing between the surface area from the low-altitude cloud. 
 
 \section{Exploration}
-\begin{figure}[h!]
+\begin{figure*}[!h]
 \centering
-\captionsetup{justification=centering}
+% \captionsetup{justification=centering}
 \includegraphics[width=1.0\textwidth]{1.a.png}
-\caption{Histograms of humidity, temperature, incident PAR, and reflected PAR after the outlier removal}
-\label{fig3:combined_hist_after_clean}
-\end{figure}
+\caption{Three data units taken at different times at the same Arctic location. Each pixel is color coded by its respective expert label. Cloudy for blue, Brown for surface, and White for unlabeled pixels.}
+\label{fig:image_labels}
+\end{figure*}
+
 \lipsum[2-4]
 
 \section{Preparation}
