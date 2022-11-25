@@ -14,6 +14,7 @@
 \usepackage{xcolor}
 \usepackage{multicol}
 \usepackage{lipsum}
+\usepackage{subfig}
 
 % Some general setting
 \graphicspath{ {./statics/} }
@@ -35,32 +36,280 @@ Global warming and how surface air temperatures changes has been a general scien
 
 MISR provides Arctic satellite images on each orbit on each path every 16 days interval. Each resulting data unit is an image concentrating on a particular, repeating Arctic location patch. Tao and other members of his team took the time to manually label the data unit with the aid of a labeling algorithm from Jet Propulsion Laboratory, which resulted in 71.5\% of conservative, expert label coverage at the pixel level for evaluating the algorithms, \{-1 = Not Cloudy, 0 = Not Sure, 1 = Cloudy\}. Furthermore, Tao's team introduced ELCM, a cloud detection algorithm based on the three expert-designed features using just if-else hard-coded rules, and utilized Quadratic Discriminant Analysis (QDA) for probabilistic prediction on top of ELCM labels that achieved astonishing results both in terms of precision and recall.
 
-Tao's team introduced three expertly designed features through domain knowledge: CORR, SD, and NDAI. On a high level, these features were constructed through spatial convolution over a small grid under the knowledge that the aggregated radiation from multiple cameras is different between smoothed surfaces, ice and snow, and cloud. We should expect high CORR and small SD over clear or low-altitude cloud areas. NDAI provides a proxy to the visible wavelength where we should expect smaller, less volatile measures for ice and snow-covered surface than low-altitude clouds to further aid in distinguishing between the surface area from the low-altitude cloud. 
+Tao's team introduced three expertly designed features through domain knowledge: CORR, SD, and NDAI. On a high level, these features were constructed through spatial convolution over a small grid under the knowledge that the aggregated radiation from multiple cameras is different between smoothed surfaces, ice and snow, and cloud. We should expect high CORR and small SD over clear or low-altitude cloud areas. NDAI provides a proxy to the visible wavelength where we should expect smaller, less volatile measures for ice and snow-covered surface than low-altitude clouds to further aid in distinguishing between the surface area from the low-altitude cloud.
+
+Despite the amazing work done by Tao's team, we still think constructing the cloud detection algorithm using a few hard-coded linear rules is not ideal and we can certainly do better by introducing a more sophisticated model for predicting the cloud presence. Here, by utilizing the expert labels and the engineered features, we tested the performance on a few state-of-art methods and conducted an in-depth modeling calibration analysis for future potential improvements. 
 
 \section{Exploration}
+The dataset consists of xxx pixels each coming from 1 of 3 images. Along with an X and Y coordinate for each pixel, each pixel is associated with 8 covariates and a label. The label takes the value of 'Cloud', 'Non-Cloud' or 'Unlabelled'. With the former two categories being pixels that are annotated by experts and the latter 'Unlabelled' category being pixels that were not. In this section we conduct initial exploratory data analysis, this will influence our choice of models as well as our testing - validation strategies.
+
+\subsection{Distribution of Labels}
+We first plot the spatial distribution of labels image wise. This is shown in \ref{fig:image_labels} where we have plotted each of the three images over laid with their associated class. As can be seen, especially in image 2 and image 3, a large number of pixels are unlabelled, further the distribution of labelled pixels also vary according to the images. This is further captured in \ref{fig:label_dist}, which shows that the proportion between the threes classes vary significantly between the 3 images. For example, image 3 has a mojority of points unlabelled but image 1 has majority of points labelled.
+
 \begin{figure*}[!h]
 \centering
 % \captionsetup{justification=centering}
 \includegraphics[width=1.0\textwidth]{1.a.png}
-\caption{Three data units taken at different times at the same Arctic location. Each pixel is color coded by its respective expert label. Cloudy for blue, Brown for surface, and White for unlabeled pixels.}
+\caption{Three data units taken at different times at the same Arctic location. Each pixel is color-coded by its respective expert label. Cloudy for blue, Brown for surface, and White for unlabeled pixels.}
 \label{fig:image_labels}
 \end{figure*}
 
-\lipsum[2-4]
+\begin{figure*}[!h]
+\centering
+% \captionsetup{justification=centering}
+\includegraphics[width=1.0\textwidth]{statics/Label_dist.png}
+\caption{Label distribution for the three images in our dataset}
+\label{fig:label_dist}
+\end{figure*}
+The spatial distribution plots of labels also shows how highly correlated the labels are to the spatial location of the images. In all three images we can see large patches of pixels that have the same label. This tells us that nearby pixels in the same image are very likely to have the same labels, meaning that the pixels should are not IID.
+
+\subsection{Covariate Distribution}
+We first investigate the distribution between the 3 expert engineered features. These are NDAI, CORR and SD. SD has a range that is much large than NDAI and CORR, thus we do a log transform for plotting purposes. Figure \ref{fig:covariate_dist} is a pair plot of the 3 covariates NDAI, Corr and Log(SD). We can see that the individual histograms for all 3 variables are quite well separated, all 3 forming distinct bimodal distributions. The pairwise scatter plots also appears relatively well separated between some pairs of variables such as in CORR against NDAI the non-cloud and cloud points are generally. An interesting pattern however is that the non-cloud data points tend to have a tail region that intersects with the cloud data points probability mass.
+
+Next we plot the features spatially, that is plotting each pixel in its x-y coordinate overlaid with the feature's value. This is displayed in Figure \ref{fig:spatial_dist_covariates}, where we have plotted the values of NDAI, Corr and Log(SD) for the three images. There are several observations, firstly, We can see that the values of the features are highly correlated spatially, meaning that neighbouring pixels tend to have similar covariate value. This is unsurprising since the features of each pixel are derived based on the xx features from neighbouring pixels. Interestingly we also observed that there is not one expert engineered feature that perfectly aligns with all the labelled values in all the 3 images. That is to say, a more high performing classifier will very likely need to use a combination of the features.
+
+
+\begin{figure*}[!h]
+\centering
+% \captionsetup{justification=centering}
+\includegraphics[width=0.9\textwidth]{statics/example_pair_plot.png}
+\caption{Pair Plot of NDAI, CORR and log(SD)}
+\label{fig:covariate_dist}
+\end{figure*}
+
+\begin{figure*}[!h]
+\centering
+% \captionsetup{justification=centering}
+\includegraphics[width=0.9\textwidth]{statics/image_spatial_features.png}
+\caption{Each image over laid with values for NDAI, Corr and Log(SD). Red represents high values and blue low values}
+\label{fig:spatial_dist_covariates}
+\end{figure*}
+
 
 \section{Preparation}
-\lipsum[2-4]
+\subsection{Data Splitting}
+The main challenge with splitting the data is that the features NDAI, SD and CORR for a given pixel (line of data) are constructed by taking averages of values from neighboring pixels. This implies that pixels in same patches of the images will have feature values that are highly correlated to each other. Thus due to this spatial relation, the data cannot be treated as IID. To handle this spatial dependence we propose a specialized cross - validation and testing strategy. 
+\\
+\begin{figure}%
+    \centering
+    \subfloat[\centering Test Schema 1]{{\includegraphics[width=8.5cm]{statics/test_scheme1.png} }}%
+    \qquad
+    \subfloat[\centering Test Schema 2]{{\includegraphics[width=8.5cm]{statics/test_scheme2.png} }}%
+    \caption{Two different methods of cross validation and training. Grey patches represents training data, orange patches represent validation set, green patches represent test data.}%
+    \label{fig:test_schema}%
+\end{figure}
+
+In these strategies, the validation approach remain the same whereas the the test set differs. Primarily our approach seeks to reduce data leakage induced by the spatial dependency by removing an appropriately sized neighbourhood around a chosen test/validation patch. This is illustrated in \ref{fig:test_schema}. Here the gray patches represent the training set of pixels extracted from a given image, the orange samples represent the patch of an image used of validation. The white region represents data points that are omitted as these points if used in the training set will contain information about the pixels in the validation / test set. The validation patch is then shifted around the image with each shift forming a cross validation fold. 
+\\
+\\
+To test, we consider two schemes. \underline{Test Scheme 1} we use images 1 and 2 as for training and cross validation, and assess the model on all pixels in image3. \underline{Test Scheme 2} we use images 1, 2 and 3 as a combined training, cross validation and test set. Here we an additional patch as seen in b) of \ref{fig:test_schema}, highlighting that at each fold we also segment a part of the image and test on that. 
+\subsection{Baseline}
+For both the test schemes, we compute the accuracy of a trivial classifier, which sets all labels to cloud free. These results are reported in #table.
+
+\subsection{First Order Importance}
+
+...
+
 
 \section{Modeling}
-\lipsum[2-4]
+\subsection{Models Used and Assumptions}
+We try 4 classification methods, logistic regression (L2 regularized), CART, Random Forest and Adaboost. Firstly we provide some brief commentary on the assumptions of these models.
+\begin{itemize}
+    \item \underline{Logistic Regression}. This model is linear and assumes linear decision boundary between the two classes, from our plots the data seems well separated linearly by most of the features, however we cannot be sure in the high dimensional space.
+    \item \underline{CART}. This model is non-linear but partitions the feature space into rectangles. In particular it will generally perform worse if the decision boundary is not axis aligned. 
+    \item \underline{Random Forest}. This model is non-linear and uses bootstrap aggregation to reduce variance. Another point that is important is that the model works better when the set of trees trained is less correlated, one factor that affects this is if different covariates used are correlated. This is something that affects us since we use all 7 features, but we know that 3 of the features (NDAI, CORR and SD) are actually transforms of the remaining 4.
+    \item \underline{Adaboost}. This model is also non-linear and uses boosting to overcome limitations of a single weak classifier. In this case we use a pruned CART tree as the weak learner. There are not many assumptions of this model that affect our use of it.
+\end{itemize}
+\\
+Lastly, all these models assume that input data is IID. We know that they are not due to the spatial dependence. As mentioned we have tried to account for this in our testing and validation procedure. 
+
+\subsection{CV Results}
+We use patch sizes of 55x55. In total this produces 44 folds for cross validation for test scheme 1. And 40 folds for cross-validation/testing in test scheme 2. We consider two metrics, accuracy and balanced accuracy for computing the cross validated error and test error for both test schemes. 
+
+% Results 1 table
+\begin{table}
+\begin{center}
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{||c c c c c||} 
+
+ \hline
+Model & CV Acc. & CV B. Acc. & Test Acc. & Test B. Acc. \\ [0.5ex] 
+ \hline\hline
+ LR & 0.880 & 0.869 & 0.769 & 0.764 \\ 
+ \hline
+ RF& 0.881 & 0.876 & 0.494 & 0.645 \\
+ \hline
+ CART & 0.872 & 0.868 & 0.759 & 0.749 \\
+ \hline
+ Adaboost & 0.884 & 0.874 & 0.788 & 0.778 \\
+ \hline
+\end{tabular}
+}
+\caption{CV results and test set results for the 4 models under test scheme 1}
+\label{tab:scheme1_results}
+\end{center}
+\end{table}
+
+% Results 2 Table
+\begin{table}
+\begin{center}
+\resizebox{\columnwidth}{!}{
+\begin{tabular}{||c c c c c||} 
+
+ \hline
+Model & CV Acc. & CV B. Acc. & Test Acc. & Test B. Acc. \\ [0.5ex] 
+ \hline\hline
+ LR & 0.877 & 0.820 & 0.877 & 0.820 \\ 
+ \hline
+ RF& 0.878 & 0.819 & 0.877 & 0.814 \\
+ \hline
+ CART & 0.860 & 0.821 & 0.860 & 0.821 \\
+ \hline
+ Adaboost & 0.867 & 0.805 & 0.867 & 0.805 \\
+ \hline
+\end{tabular}
+}
+\caption{CV results and test set results for the 4 models under test scheme 2}
+\label{tab:scheme2_results}
+\end{center}
+\end{table}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\textwidth]{statics/test_Scheme_1_Fold_error.png}
+\caption{Accuracy and Balanced Accuracy for each validation fold in Test Scheme 1. Top left: Logistic Regression, Top Right: Random Foret, Bottom Left: CART, Bottom Right: Adaboost}
+\label{fig:fold_results_1}
+\end{figure}
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\textwidth]{statics/test_Scheme2_fold_error.png}
+\caption{Accuracy and Balanced Accuracy for each validation fold in Test Scheme 2. Top left: Logistic Regression, Top Right: Random Foret, Bottom Left: CART, Bottom Right: Adaboost}
+\label{fig:fold_results_2}
+\end{figure}
+
+\\
+Aggregated validation and test results are provided in Tables \ref{tab:scheme1_results} and \ref{tab:scheme2_results} for test scheme 1 and 2 respectively. \textcolor{red}{Add commentary about model results}.
+\\
+These tables also show the difference in test scheme 1 and test scheme 2. We can see that the CV results and the test results are very similar in test scheme 2 (as seen from Table \ref{tab:scheme2_results}), whereas the test results in Table \ref{tab:scheme1_results} are generally worse than the CV results. This reflects the fact that in test scheme 2, the nested test - validation procedure means that the validation and testing procedure at the exact same, hence we can expect that both produce similar errors. In contrast with test scheme 1, the test procedure (testing on 1 image) is quite different from the validation procedure. We see that test scheme 1 allows us to detect over fitting of some models even when high CV accuracy is shown. This is the case in the Random Forest model, which had the second best performing CV accuracy, but the poorest test accuracy.
+\\
+More insights can be gleaned from Figures \ref{fig:fold_results_1} and \ref{fig:fold_results_2} which plots the individual fold errors. Of key note here is that the errors fluctuate a fair bit over the different folds. This is due to our patch wise formation of the validation set, meaning that the labels in most of the patches are going to be similar. In subsequent sections we analyse whether our model systematically makes errors on certain labels. 
+
+
+
+\subsection{ROC Plots}
+We plot the ROC curves generated for both the validation and test set(s) used in testing scheme 1 and testing scheme 2. These are displayed in \ref{fig:ROC_curves scheme1} and \ref{fig:ROC_curves scheme2}. An ROC curve highlights the predicted true positive rate a model can achieve for a given false positive rate (or vice versa). (Insert explanation about which do we care more about).
+\\ 
+Intuitively a model that has a more favourable trade off between the two is better performing, this can be measured by the area under curve metric. As can be seen the AUC between LR, RF and Adaboost is similar across both testing schemes and across both the validation and testing sets. One surprising exception to this is the random forest model, which sees a sharp drop in AUC in testing scheme 1 on the test set. This is likely indicative of overfitting in the RF model in test scheme 1. The CART model seems to perform the worse, as highlighted by its consistently lower AUC across both validation / testing sets.
+
+\begin{figure}%
+    \centering
+    \subfloat[\centering Test Scheme 1: CV ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme1_cv_roc.png} }}%
+    \qquad
+    \subfloat[\centering Test Schema 1: Test ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme1_test_roc.png} }}%
+    \caption{Left: ROC curves per fold and Mean ROC curve for the 4 models. Right: ROC curves of the single held out test set for the 4 models. }%
+    \label{fig:ROC_curves scheme1}%
+\end{figure}
+
+\begin{figure}%
+    \centering
+    \subfloat[\centering Test Scheme 1: CV ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme2_cv_roc.png} }}%
+    \qquad
+    \subfloat[\centering Test Schema 1: Nested Test ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme2_test_roc.png} }}%
+    \caption{Left: ROC curves per fold and Mean ROC curve for the 4 models. Right: ROC curves of each test fold and Mean ROC curves across all test folds for the 4 models. }%
+    \label{fig:ROC_curves scheme2}%
+\end{figure}
+
 
 \section{Diagnostics}
-\lipsum[2-4]
+We base on our choice of model on performance on testing scheme 1. This is because the testing scheme better reflects the actual use case of the model, where inference will be made on whole images. Hence we choose the the Adaboost model which has the best validation and test performance. 
+
+\subsection{Analysis of Adaboost}
+To analyse the converge we look at the sequence of error rate generated by the boosting alrogithm. We also analyse the feature importance to check for stability in the chosen features over the various validation folds and train set.
+\subsubsection{Convergence Analysis}
+Being an iterative algorithm, we first assess the performance of the adaboost learner across each iteration. This is displayed in \ref{fig:Adaboost_iterations}. We see that the test error of the algorithm converges, starting to rise after initially decreasing after just 25 boosting iterations. More boosting iterations are likely to result in over fitting of the training set. We believe that the algorithm converges with so little boosting iterations due to the expert labelled features which provide a large amount of information to the model. As can be see even the initial decision stump is able to achieve close to 12.4\% train error.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.52\textwidth]{statics/ada_iterations.png}
+\caption{Percentage error across subsequent iterations of Adaboost. Left: Error on Train Set, Right: Error on Test Set.}
+\label{fig:Adaboost_iterations}
+\end{figure}
+
+
+\subsubsection{Feature Importance}
+Next we assess the stability of the adaboost model via its learnt feature importance. This feature importance scored is calculated by aggregating, for a single run the feature importance of each weak learner (decision tree) learnt by the algorithm. We calculate feature importance in test scheme 1 for 1) Model trained on the full train/validation set 2) Model trained at each cross validation fold. These results are shown in Figure \ref{fig:Feature_importance ts1}.
+
+\begin{figure}[h]
+\centering
+\includegraphics[width=0.5\textwidth]{statics/Feature_importance_test_scheme1.png}
+\caption{Feature Importance of Adaboost for 1) model trained on full train and validation set. 2) Each CV fold 3) Average across CV folds.}
+\label{fig:Feature_importance ts1}
+\end{figure}
+
+\\
+Comparing the learnt feature importance we see that the model learnt on the full training set generally matches those learnt in the cross validation models. For example, NDAI is consistently the highest ranked feature. Likewise Corr is ranked highly in both the testing model and the cross validation models. This similarity in feature importance indicates model stability across the various data splits and with the final test model. 
+
+\subsection{Analysing Error Patterns}
+We analyse error patterns mainly by looking at the predicted probabilities across different spatial regions as well as different regions in the feature space. The latter poses challenges due to the high dimensional nature of the feature space. We describe in subsequent sections how we overcame this using dimensionality reduction.
+\subsubsection{Prediction Probabilities}
+Next we investigate how well calibrated the probabilities generated by Adaboost is. This will give us insights into have the algorithm performs. For each image, we generate predictions of the probability of a cloud prediction for each pixel. We then compare this to the true expert labelled pixels. These are plotted in Figure \ref{fig:Probability_Preds}.
+
+\begin{figure}%
+    \centering
+    \subfloat[\centering Test Image 1]{{\includegraphics[width=9.3cm]{statics/ada_test_prob.png} }}%
+    \qquad
+    \subfloat[\centering Train Image 1]{{\includegraphics[width=9.3cm]{statics/ada_train_prob1.png} }}%
+    \qquad
+    \subfloat[\centering Train Image 2]{{\includegraphics[width=9.3cm]{statics/ada_train_prob2.png} }}%
+    \caption{Left Column: Pixels colored by expert labels, Red: Clouds, Blue: No Clouds, White: Unlabelled. Right Column: Predicted probability given by the model.}%
+    \label{fig:Probability_Preds}%
+\end{figure}
+\\
+Firstly for the training case, we can see clearly that across image 1 and 2, there are more non-cloud labelled points than cloud points. This create a bias in the training data. Interestingly we see that the model seems to be biased towards predicting a pixel as a cloud. With large swaths of the image's predicted probability being slightly greater than 0.5. For example in the first training image, we see mis-classification occurs in non-cloud regions being predicted as clouds in areas where the non-cloud regions are surrounded by clouds. The same is seen in the second training image, where only the right most patch of non-cloud regions is successfully predicted by the adaboost algorithm. 
+\\
+Another point to note is that the model is generally very cautious about its probability prediction for the cloud class, with the highest predicted probability being only 0.61. In contrast, it is more confident about predicting a non-cloud, with predictive probabilities reaching 0.113. This is reflected in Figure \ref{fig:Probability_Preds}, where the red probability regions are very faint, and the blue probability regions are darker. This is a positive feature of the model since the train set generally has less cloud labelled points, hence it is natural that the model should generally be less confident about predicting points as the cloud class. In contrast, since the dataset has relatively more non-cloud class, the model has become more confident when predicting them. Thus we have reason to believe that given more training data, the model will become more confident about its cloud class prediction.
+
+\subsubsection{Decision Surface Analysis}
+Next we analyze the decision surface of Adaboost. This is a similar analysis to that in the previous section, except that now instead of analyzing predicted probabilities with respect to the spatial coordinates of the pixel, we do so with respect to the features used. 
+\\
+\\
+There are in total 7 features used, meaning that the decision surface cannot be easily visualized due to the high dimension. We thus conduct a PCA first, projecting the feature space into 2 dimensions. This learnt PCA can then used to inversely project a grid of 2 dimension points to the covariate space which we can then classify using the model. Doing this we obtain can obtain a low - diemsional representation of the decision surface our model. This is represented in Figure \ref{fig:decision_surface}. \\
+
+\begin{figure}%
+    \centering
+    \subfloat[\centering Low Dimension Representation of Adaboost Decision Surface]{{\includegraphics[width=7cm]{statics/PCA_decision_surface.png} }}%
+    \qquad
+    \subfloat[\centering Low Dimension Representation of Logistic Regression Decision Surface]{{\includegraphics[width=7cm]{statics/log_reg_decision_surface.png} }}%
+
+    \caption{Decision Surfaces of Adaboost (Top) and Logistic Regression (Bottom). }%
+    \label{fig:decision_surface}%
+\end{figure}
+
+For comparison we have plotted the decision surface of logistic regression model. Once again we can see a similar trend as in Figure \ref{fig:Probability_Preds}. The model tends to be more confident in the non cloud (blue) prediction versus the cloud (red) prediction. We further see a more complex decision surface where regions with mostly cloud points have high classification probability. As the space becomes mixed with cloud and non cloud points the confidence in classifying as non-clouds steadily decreases and starts to shift towards classifying as clouds as the we move into the space populated mainly by cloud points. Interestingly, as we move further towards the top right of the 2D space the model actually becomes less confident about its predictions. Contrast this to the decision surface generated by the logistic regression. In this case the decision surface is almost uniformly confident throughout in the two regions of its decision surface, it is exhibits very high confidence in regions where there is little data, or where there is a lot of overlapping data from both classes.\\
+
+Combining the decision surface and the pixel wise probabilities in Figure \ref{fig:Probability_Preds}. We conclude that the Adaboost algorithm is able to learn sensible probabilities. This accurate quantification of uncertainty by the Adaboost algorithm is important given the small amount of data available in the problem. Further, we see that as more data is given Adaboost becomes more confident in its prediction, meaning that it has enough capacity to learn even more complex decision surfaces given more data. 
+
+
+\subsection{Alternative Classifiers}
+There are two key issues with our model. Firstly, our model ignores spatial dependencies between pixels; secondly, it is a supervised learning model that requires expert labels to train.
+\subsubsection{Spatial Dependencies}
+Several models can explicitly account for spatial dependencies in images. One example would be the convolutional neural network, which we could train to produce pixel-wise outputs of the cloud prediction based on the input features (stacked as an image). Another option that doesn't require expert labeling is the Ising / Potts model, which explicitly encodes the spatial dependencies via an undirected graph. These two models should perform better than our selected classifiers by directly modeling the innate spatial dependencies of the image data.
+\subsubsection{Limited Data Size}
+As said, our algorithm requires expert labels to train, which is often time-consuming and not easily obtainable. The main concern is the relatively small set of images we have for training. As such, we will likely encounter future test images of highly different covariate distributions (data drift) and also different covariate-to-output relations (concept drift). The currently trained classifier will perform poorly on these edge cases. As such, unless we have a bigger training dataset, we are not confident of the model's ability to generalize to a large set of new images. 
+
+\subsection{Conclusion/Why Adaboost}
+\begin{itemize}
+    \item We have shown that Adaboost is able to learn well calibrated decision surfaces, despite the relative lack of data.
+    \item Hence we are confident this algorithm will work well given a larger set of images.
+    \item The ability to generated predicted probabilities is also useful in labelling new images in the future, which we could do so via an active learning procedure.
+\end{itemize}
+
 
 \section{Conclusion}
-\lipsum[2-4]
+
 
 \section{Appendix}
-\lipsum[2-4]
+
 
 \end{document}
