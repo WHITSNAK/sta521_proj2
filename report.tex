@@ -54,13 +54,13 @@ We first plot the spatial distribution of labels image-wise. This is shown in \r
 \label{fig:image_labels}
 \end{figure*}
 
-\begin{figure*}[!h]
+\begin{figure}[!h]
 \centering
 % \captionsetup{justification=centering}
-\includegraphics[width=1.0\textwidth]{statics/Label_dist.png}
-\caption{Label distribution for the three images in our dataset}
+\includegraphics[width=0.5\textwidth]{statics/2.a.png}
+\caption{Label distribution percentages for the three images in our dataset}
 \label{fig:label_dist}
-\end{figure*}
+\end{figure}
 
 \subsection{i.i.d Assumption}
 The spatial distribution plots of labels also shows how highly correlated the labels are to the spatial location of the images. In all three images we can see large patches of pixels that have the same label. This tells us that nearby pixels in the same image are very likely to have the same labels, meaning that the pixels should are not IID.
