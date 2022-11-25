@@ -44,8 +44,6 @@ Despite the amazing work done by Tao's team, constructing the cloud detection al
 The dataset consists of 3 images shot at the same Arctic location from different orbits. Each consists of $305 \times 382$ pixels that are labeled, \{-1 = Not Cloudy, 0 = Not Sure, 1 = Cloudy\}. The former two categories are pixels that experts annotate, and the latter 'Unlabelled' category is pixels that were not. The labeling process was conservative, so pixels that are not totally obvious are left unlabelled. Along with an X and Y coordinate for each pixel, each pixel is associated with 8 covariates. In this section, we conduct initial exploratory data analysis, which greatly influenced our later modeling choices and testing-validation strategies.
 
 \subsection{Label Distributions}
-We first plot the spatial distribution of labels image-wise. This is shown in \ref{fig:image_labels} where we have plotted each of the three images overlaid with their associated class. As can be seen, especially in image 2 and image 3, many pixels are unlabelled. Further, the distribution of labeled pixels also varies according to the images. This is further captured in \ref{fig:label_dist}, which shows that the proportionality between the three classes varies significantly between the 3 images. For example, image 2 has a majority of points unlabelled, but image 1 has the majority of points labeled.
-
 \begin{figure*}[!h]
 \centering
 % \captionsetup{justification=centering}
@@ -54,38 +52,47 @@ We first plot the spatial distribution of labels image-wise. This is shown in \r
 \label{fig:image_labels}
 \end{figure*}
 
+We first plot the spatial distribution of labels image-wise. This is shown in Figure \ref{fig:image_labels} where we have plotted each of the three images overlaid with their associated class. As can be seen, especially in image 2 and image 3, many pixels are unlabelled. Further, the distribution of labeled pixels also varies according to the images. This is further captured in Figure \ref{fig:label_dist}, which shows that the proportionality between the three classes varies significantly between the 3 data units. For example, image 2 has a majority of points unlabelled, but image 1 has the majority of points labeled. Images 2 and 3 have more labeled surface pixels than cloud pixels, and image 1 has the most labeled surface and cloud pixels.
+
 \begin{figure}[!h]
 \centering
 % \captionsetup{justification=centering}
-\includegraphics[width=0.5\textwidth]{statics/2.a.png}
+\includegraphics[width=0.48\textwidth]{statics/2.a.png}
 \caption{Label distribution percentages for the three images in our dataset}
 \label{fig:label_dist}
 \end{figure}
 
 \subsection{i.i.d Assumption}
-The spatial distribution plots of labels also shows how highly correlated the labels are to the spatial location of the images. In all three images we can see large patches of pixels that have the same label. This tells us that nearby pixels in the same image are very likely to have the same labels, meaning that the pixels should are not IID.
+The spatial distribution plots of labels also show how highly correlated the labels are to the spatial location of the images. In all three images, we can see large patches of pixels with the same label. This tells us that nearby pixels in the same image are likely to have the same labels. For example, if we predict by using the neighboring pixel, we can do extremely well due to data leakage. Hence, if we blindly do the model training using the typical randomized K-folds, the resulting scores are not that informative. In other words, the pixels are not i.i.d samples; we need to be particularly cautious about this in the training procedure.
 
 \subsection{Covariate Distribution}
-We first investigate the distribution between the 3 expert engineered features. These are NDAI, CORR and SD. SD has a range that is much large than NDAI and CORR, thus we do a log transform for plotting purposes. Figure \ref{fig:covariate_dist} is a pair plot of the 3 covariates NDAI, Corr and Log(SD). We can see that the individual histograms for all 3 variables are quite well separated, all 3 forming distinct bimodal distributions. The pairwise scatter plots also appears relatively well separated between some pairs of variables such as in CORR against NDAI the non-cloud and cloud points are generally. An interesting pattern however is that the non-cloud data points tend to have a tail region that intersects with the cloud data points probability mass.
+We first investigate the distribution between the 3 expert engineered features, NDAI, CORR, and SD. SD has a much larger range than the rest; thus, we applied a log transformation for plotting purposes. Figure \ref{fig:covariate_dist} is a pair plot of the 3 covariates NDAI, Corr, and Log(SD). We can see that the individual histograms for all 3 variables are quite separated, all 3 forming distinct bimodal distributions. The pairwise scatter plots also appear, relatively well separated between variables such as in CORR against NDAI, the non-cloud and cloud point likely to have the same labels, meaning that the pixels should not be points that tend to have a tail region that intersects with the cloud data points probability mass.
 
-Next we plot the features spatially, that is plotting each pixel in its x-y coordinate overlaid with the feature's value. This is displayed in Figure \ref{fig:spatial_dist_covariates}, where we have plotted the values of NDAI, Corr and Log(SD) for the three images. There are several observations, firstly, We can see that the values of the features are highly correlated spatially, meaning that neighbouring pixels tend to have similar covariate value. This is unsurprising since the features of each pixel are derived based on the xx features from neighbouring pixels. Interestingly we also observed that there is not one expert engineered feature that perfectly aligns with all the labelled values in all the 3 images. That is to say, a more high performing classifier will very likely need to use a combination of the features.
-
-
-\begin{figure*}[!h]
-\centering
-% \captionsetup{justification=centering}
-\includegraphics[width=0.9\textwidth]{statics/example_pair_plot.png}
-\caption{Pair Plot of NDAI, CORR and log(SD)}
-\label{fig:covariate_dist}
-\end{figure*}
+Next, we plot the features spatially with each pixel in its x-y coordinate overlaid with the feature's value. This is displayed in Figure \ref{fig:spatial_dist_covariates}, where we have plotted the values of NDAI, Corr, and Log(SD) for the three images. There are several observations. Firstly, We can see that the values of the features are highly correlated spatially, meaning that neighboring pixels tend to have similar covariate values. This is unsurprising since the features of each pixel are derived based on the xx features from neighboring pixels. Interestingly we also observed that there is not one expert-engineered feature that perfectly aligns with all the labeled values in all the 3 images. That is to say that a high-performing classifier will likely need to use a combination of the features because a linear separating hyperplane does not exist.
 
 \begin{figure*}[!h]
 \centering
 % \captionsetup{justification=centering}
-\includegraphics[width=0.9\textwidth]{statics/image_spatial_features.png}
-\caption{Each image over laid with values for NDAI, Corr and Log(SD). Red represents high values and blue low values}
-\label{fig:spatial_dist_covariates}
+\includegraphics[width=0.9\textwidth]{statics/2.c.png}
+\caption{Pair Plot of All Features}
+\label{fig:covariate_pairplot}
 \end{figure*}
+
+% \begin{figure*}[!h]
+% \centering
+% % \captionsetup{justification=centering}
+% \includegraphics[width=0.9\textwidth]{statics/example_pair_plot.png}
+% \caption{Pair Plot of NDAI, CORR and log(SD)}
+% \label{fig:covariate_dist}
+% \end{figure*}
+
+% \begin{figure*}[!h]
+% \centering
+% % \captionsetup{justification=centering}
+% \includegraphics[width=0.9\textwidth]{statics/image_spatial_features.png}
+% \caption{Each image over laid with values for NDAI, Corr, and Log(SD). Red represents high values and blue low values}
+% \label{fig:spatial_dist_covariates}
+% \end{figure*}
 
 
 \section{Preparation}
@@ -215,9 +222,9 @@ Intuitively a model that has a more favourable trade off between the two is bett
 
 \begin{figure}%
     \centering
-    \subfloat[\centering Test Scheme 1: CV ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme2_cv_roc.png} }}%
+    \subfloat[\centering Test Scheme 2: CV ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme2_cv_roc.png} }}%
     \qquad
-    \subfloat[\centering Test Schema 1: Nested Test ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme2_test_roc.png} }}%
+    \subfloat[\centering Test Schema 2: Nested Test ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme2_test_roc.png} }}%
     \caption{Left: ROC curves per fold and Mean ROC curve for the 4 models. Right: ROC curves of each test fold and Mean ROC curves across all test folds for the 4 models. }%
     \label{fig:ROC_curves scheme2}%
 \end{figure}
