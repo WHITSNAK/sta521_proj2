@@ -109,26 +109,26 @@ With only 3 image units given, we first keep image 1, the one with most of the p
 The validation approach remains the same in these strategies, but the testing method differs in the second Scheme. We introduce a nested approach to make the most use of the limited data. In other words, we can train, validate, and test each at the same time each fold instead of keeping one testing image out completely. To illustrate, the right plot of Figure \ref{fig:test_schema} contains an example. With this procedure, we can use all 3 images as a combined training, CV, and test set. Here we have an additional \textcolor{ForestGreen}{green} patch representing our test set only with the \textcolor{orange}{orange} validation set. We segment a part of the image at each fold and use it in testing. While both patches shift around the image, everything else stays the same, 
 
 \subsection{Baseline}
-We compute the accuracy of a trivial classifier for both test schemes, which sets all labels to cloud-free. These results are reported in Table \ref{tab:scheme1_results}. We see that a naive classifier that predicts all pixels are surface achieves around 52\% accuracy, which is well underperforming from the rest of the classifiers. Such exercise sets the baseline that the result we achieve here is not trivial.
+We compute the accuracy of a trivial classifier for both test schemes, which sets all labels to cloud-free. These results are reported in Table \ref{tab:scheme1_results}. We see that a naive classifier that predicts all pixels are surface achieves around 52\% accuracy, which is well underperforming from the rest of the classifiers. Such exercise sets the baseline that our result is not trivial.
 
 \subsection{First Order Importance}
-In section 2.B, we extensively covered the importance of features, which is also shown in Figure \ref{fig:covariate_pairplot}. We can achieve pretty far on the classification task by only using the expert-engineered features, NDAI, CORR, and SD. We can see in the KDE plot of NDAI and SD that surface and cloud pixels form distinct density mass with a slight overlap. Adding CORR into the mix, by identifying pixels with low correlation are typically surface pixels, we can achieve a reasonable result that should remember like a logistic regression using only these 3 features.
+In section 2.B, we extensively covered the importance of features, which is also shown in Figure \ref{fig:covariate_pairplot}. We can achieve pretty far on the classification task by only using the expert-engineered features, NDAI, CORR, and SD. We can see in the KDE plot of NDAI and SD that surface and cloud pixels form distinct density mass with a slight overlap. Adding CORR into the mix, by identifying pixels with low correlation are typically surface pixels, we can achieve a reasonable result that should resemble a logistic regression using only these 3 features.
 
 
 \section{Modeling}
 \subsection{Models Used and Assumptions}
-We try 4 classification methods, logistic regression (L2 regularized), CART, Random Forest, and Adaboost. Firstly we provide some brief commentary on the assumptions of these models.
+For the next couple of sections, we compare 4 different classification methods, logistic regression (L2 regularized), CART, Random Forest, and Adaboost, on the cloud detection task. We provide some brief commentary on the assumptions of these well-known models. Besides, all these models assume i.i.d samples. We know that they are not due to spatial dependence. However, as mentioned previously, we have addressed the spatial correlation issue with our specially designed CVT procedures. 
 \begin{itemize}
-    \item \underline{Logistic Regression}. This model is linear and assumes a linear decision boundary between the two classes, from our plots the data seems well separated linearly by most of the features, however we cannot be sure in the high dimensional space.
-    \item \underline{CART}. This model is non-linear but partitions the feature space into rectangles. In particular it will generally perform worse if the decision boundary is not axis aligned. 
-    \item \underline{Random Forest}. This model is non-linear and uses bootstrap aggregation to reduce variance. Another point that is important is that the model works better when the set of trees trained is less correlated, one factor that affects this is if different covariates used are correlated. This is something that affects us since we use all 7 features, but we know that 3 of the features (NDAI, CORR and SD) are actually transforms of the remaining 4.
-    \item \underline{Adaboost}. This model is also non-linear and uses boosting to overcome limitations of a single weak classifier. In this case we use a pruned CART tree as the weak learner. There are not many assumptions of this model that affect our use of it.
+    \item \underline{Logistic Regression}. This model assumes a linear decision boundary between the two classes. According to our EDA, we should expect it to achieve a reasonable result since the data seems well separated linearly using just the 3 expert-engineered features. However, we cannot be sure about the high-dimensional space.
+    \item \underline{CART}. This model is non-linear and partitions the feature space into rectangles. In particular, it will perform worse if the decision boundary is not axis aligned. 
+    \item \underline{Random Forest}. This model is non-linear and uses bootstrap aggregation to reduce variance. Another important point is that the model works better when the set of trees trained is less correlated. One factor that affects this is if different covariates used are correlated. This is something that affects us since we use all 8 features, but we know that 3 of the features (NDAI, CORR, and SD) actually transform the other 4.
+    \item \underline{Adaboost}. This model is also non-linear and uses boosting to overcome the limitations of a single weak classifier. In this case, we use a pruned CART tree, with only 1 depth, as the weak learner. Not many assumptions of this model affect our use of it.
 \end{itemize}
 \\
-Lastly, all these models assume that input data is IID. We know that they are not due to the spatial dependence. As mentioned we have tried to account for this in our testing and validation procedure. 
+
 
 \subsection{CV Results}
-We use patch sizes of 55x55. In total this produces 44 folds for cross validation for test scheme 1. And 40 folds for cross-validation/testing in test scheme 2. We consider two metrics, accuracy and balanced accuracy for computing the cross validated error and test error for both test schemes. 
+We use patch sizes of 55x55. In total, this produces 44 folds for cross-validation for test scheme 1. And 40 folds for cross-validation/testing in test scheme 2. We consider two metrics, accuracy and balanced accuracy, for computing the CV errors and test error for both test schemes. 
 
 % Results 1 table
 \begin{table}
@@ -224,7 +224,7 @@ Intuitively a model that has a more favourable trade off between the two is bett
 
 
 \section{Diagnostics}
-We base on our choice of model on performance on testing scheme 1. This is because the testing scheme better reflects the actual use case of the model, where inference will be made on whole images. Hence we choose the the Adaboost model which has the best validation and test performance. 
+We base on our choice of model on performance on testing scheme 1. This is because the testing scheme 1 better reflects the actual use case of the model, where inference will be made on whole images. Hence we choose the the Adaboost model which has the best validation and test performance. 
 
 \subsection{Analysis of Adaboost}
 To analyse the converge we look at the sequence of error rate generated by the boosting alrogithm. We also analyse the feature importance to check for stability in the chosen features over the various validation folds and train set.
@@ -280,9 +280,9 @@ There are in total 7 features used, meaning that the decision surface cannot be 
 
 \begin{figure}%
     \centering
-    \subfloat[\centering Low Dimension Representation of Adaboost Decision Surface]{{\includegraphics[width=7cm]{statics/PCA_decision_surface.png} }}%
+    \subfloat[\centering Low Dimension Representation of Adaboost Decision Surface]{{\includegraphics[width=10cm]{statics/PCA_decision_surface.png} }}%
     \qquad
-    \subfloat[\centering Low Dimension Representation of Logistic Regression Decision Surface]{{\includegraphics[width=7cm]{statics/log_reg_decision_surface.png} }}%
+    \subfloat[\centering Low Dimension Representation of Logistic Regression Decision Surface]{{\includegraphics[width=10cm]{statics/log_reg_decision_surface.png} }}%
 
     \caption{Decision Surfaces of Adaboost (Top) and Logistic Regression (Bottom). }%
     \label{fig:decision_surface}%
@@ -300,18 +300,12 @@ Several models can explicitly account for spatial dependencies in images. One ex
 \subsubsection{Limited Data Size}
 As said, our algorithm requires expert labels to train, which is often time-consuming and not easily obtainable. The main concern is the relatively small set of images we have for training. As such, we will likely encounter future test images of highly different covariate distributions (data drift) and also different covariate-to-output relations (concept drift). The currently trained classifier will perform poorly on these edge cases. As such, unless we have a bigger training dataset, we are not confident of the model's ability to generalize to a large set of new images. 
 
-\subsection{Conclusion/Why Adaboost}
+\section{Conclusion}
 \begin{itemize}
     \item We have shown that Adaboost is able to learn well calibrated decision surfaces, despite the relative lack of data.
     \item Hence we are confident this algorithm will work well given a larger set of images.
     \item The ability to generated predicted probabilities is also useful in labelling new images in the future, which we could do so via an active learning procedure.
 \end{itemize}
-
-
-\section{Conclusion}
-
-
-\section{Appendix}
 
 
 \end{document}
