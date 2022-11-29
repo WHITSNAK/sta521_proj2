@@ -168,13 +168,8 @@ plt.savefig('statics/test_Scheme2_fold_error.png')
 
 # Test Scheme 1
 chosen_fpr = 0.3
-
-
-
 import warnings
 warnings.filterwarnings("ignore")
-
-
 
 
 fig,ax = plt.subplots(figsize=(7,7))
@@ -259,8 +254,6 @@ for fpr_tpr, roc, mod_name, mod_col in zip(fpr_tpr_col,
     )
     
     # Plot tpr val
-
-    
     ax.plot([chosen_fpr,chosen_fpr],
             [0,tpr_val_chosen], alpha=0.5, color='black', ls='-')
 
@@ -275,7 +268,6 @@ ax.set_xlabel("False Positive Rate")
 ax.set_ylabel("True Positive Rate")
 ax.title.set_text("Test Scheme 1: Test Set ROC")
 ax.legend(loc="lower right")
-plt.show()
 plt.savefig('statics/test_Scheme1_test_roc.png')
 
 
@@ -319,9 +311,6 @@ plot_CV_ROC(result_store['Adaboost'][1]['scheme_2_raw'],
 ax.legend()
 ax.title.set_text('Test Scheme 2: Cross Validated Folds and Mean ROC')
 plt.savefig('statics/test_Scheme2_cv_roc.png')
-
-
-# In[62]:
 
 
 fig,ax = plt.subplots(figsize=(7,7))
@@ -674,16 +663,7 @@ from matplotlib import cm, colors
 fig.colorbar(cm.ScalarMappable(norm=None, cmap=cmap), ax=ax)
 plt.savefig('statics/log_reg_decision_surface.png')
 
-"""
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-
-plt.colorbar(im_plot, cax=cax)
-
-plt.show()
-"""
 
 
 # In[98]:
@@ -738,16 +718,7 @@ fig.colorbar(cm.ScalarMappable(norm=None, cmap=cmap), ax=ax)
 
 plt.savefig('statics/PCA_decision_surface.png')
 
-"""
-from mpl_toolkits.axes_grid1 import make_axes_locatable
 
-divider = make_axes_locatable(ax)
-cax = divider.append_axes("right", size="5%", pad=0.05)
-
-plt.colorbar(im_plot, cax=cax)
-
-plt.show()
-"""
 
 
 #### Analyze feature importance ####
@@ -791,6 +762,7 @@ ax.set_xticklabels([""]+features)
 ax.set_xlabel("Feature Name")
 ax.set_ylabel("CV Feature Importance")
 ax.legend()
-plt.show()
 plt.savefig('statics/Feature_importance_test_scheme1.png')
+
+
 
