@@ -27,7 +27,7 @@ def train_validate_classifer_v2(
     score = []
     for metric in metric_list:
         score.append(metric(y_val, val_preds))
-    return score, (val_preds,val_probs), (X_val, y_val)
+    return score, (val_preds,val_probs), (X_val, y_val), clf
 
 def train_validate_test_classifer_v2(
     clf: Callable, X_train: pd.DataFrame, y_train: pd.Series,
@@ -51,7 +51,7 @@ def train_validate_test_classifer_v2(
     for metric in metric_list:
         score_val.append(metric(y_val, val_preds))
         score_test.append(metric(y_test, test_preds))
-    return score_val, (val_preds, val_probs), (X_val, y_val), score_test, (test_preds,test_probs), (X_test, y_test)
+    return score_val, (val_preds, val_probs), (X_val, y_val), score_test, (test_preds,test_probs), (X_test, y_test), clf
 
 
 def cv_classifer(clf: Callable, image_data: SatelliteImageData, metric: Callable, n_jobs=8,verbose=False, **kws) -> List[float]:
