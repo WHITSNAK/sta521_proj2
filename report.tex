@@ -11,10 +11,10 @@
 \usepackage[font=scriptsize]{caption}
 \usepackage{graphicx}
 \usepackage{subcaption}
-\usepackage{xcolor}
 \usepackage{multicol}
 \usepackage{lipsum}
 \usepackage{subfig}
+\usepackage[dvipsnames]{xcolor}
 
 % Some general setting
 \graphicspath{ {./statics/} }
@@ -34,7 +34,7 @@
 \section{Introduction}
 Global warming and how surface air temperatures changes has been a general scientific interest and public policy issue. In addition, many global climate studies predicted the global surface air temperature has the strongest correlation with the increase of the Arctic's atmospheric carbon dioxide level. Hence understanding how carbon dioxide changes in the Arctic is crucial to studying global warming. As the Arctic gets warmer, water vapors and changes in the distribution and proportionality of clouds can lead to further warming and spatial sensitivity, which indicates we need a systematic, accurate way of studying cloud distribution in the Arctic. However, such a study has its unique challenges. Primarily, the current algorithm not being well-suited for distinguishing clouds from ice particles because the two particles are similar in the lens of radiation measurements. MISR data offers a potential solution and introduces a sheer amount of data volume. But the currently deployed algorithm in MISR is not particularly targeted for detecting clouds over bright surfaces in polar regions. At the same time, computational constraints also limit the existing algorithm's performance. Therefore, coming up with a computationally efficient algorithm that delivers accurate detection is of the utmost importance.
 
-MISR provides Arctic satellite images on each orbit on each path every 16 days interval. Each resulting data unit is an image concentrating on a particular, repeating Arctic location patch. Tao and other members of his team took the time to manually label the data unit with the aid of a labeling algorithm from Jet Propulsion Laboratory, which resulted in 71.5\% of conservative, expert label coverage at the pixel level for evaluating the algorithms. Furthermore, Tao's team introduced ELCM, a cloud detection algorithm based on the three expert-designed features using just if-else hard-coded rules, and utilized Quadratic Discriminant Analysis (QDA) for probabilistic prediction on top of ELCM labels that achieved astonishing results both in terms of precision and recall.
+MISR provides Arctic satellite images on each orbit on each path every 16 days interval. Each resulting data unit is an image concentrating on a particular, repeating Arctic location patch. Tao and other team members took the time to manually label the data unit with the aid of a labeling algorithm from Jet Propulsion Laboratory, which resulted in 71.5\% of conservative, expert label coverage at the pixel level for evaluating the algorithms. Furthermore, Tao's team introduced ELCM, a cloud detection algorithm based on the three expert-designed features using just if-else hard-coded rules, and utilized Quadratic Discriminant Analysis (QDA) for probabilistic prediction on top of ELCM labels that achieved astonishing results both in terms of precision and recall.
 
 Tao's team introduced three expertly designed features through domain knowledge: CORR, SD, and NDAI. On a high level, these features were constructed through spatial convolution over a small grid under the knowledge that the aggregated radiation from multiple cameras is different between smoothed surfaces, ice and snow, and cloud. We should expect high CORR and small SD over clear or low-altitude cloud areas. NDAI provides a proxy to the visible wavelength where we should expect smaller, less volatile measures for ice and snow-covered surface than low-altitude clouds to further aid in distinguishing between the surface area from the low-altitude cloud.
 
@@ -43,88 +43,83 @@ Despite the amazing work done by Tao's team, constructing the cloud detection al
 \section{Exploration}
 The dataset consists of 3 images shot at the same Arctic location from different orbits. Each consists of $305 \times 382$ pixels that are labeled, \{-1 = Not Cloudy, 0 = Not Sure, 1 = Cloudy\}. The former two categories are pixels that experts annotate, and the latter 'Unlabelled' category is pixels that were not. The labeling process was conservative, so pixels that are not totally obvious are left unlabelled. Along with an X and Y coordinate for each pixel, each pixel is associated with 8 covariates. In this section, we conduct initial exploratory data analysis, which greatly influenced our later modeling choices and testing-validation strategies.
 
-\subsection{Label Distributions}
+\subsection{Label Dispersion}
 \begin{figure*}[!h]
 \centering
 % \captionsetup{justification=centering}
 \includegraphics[width=1.0\textwidth]{1.a.png}
-\caption{Three data units taken at different times at the same Arctic location. Each pixel is color-coded by its respective expert label. Cloudy for blue, Brown for surface, and White for unlabeled pixels.}
+\caption{Three data units taken at different times at the same Arctic location. Each pixel is color-coded by its respective expert label. Cloudy for \textcolor{BlueGreen}{blue}, \textcolor{Tan}{Brown} for surface, and White for unlabeled pixels.}
 \label{fig:image_labels}
 \end{figure*}
 
-We first plot the spatial distribution of labels image-wise. This is shown in Figure \ref{fig:image_labels} where we have plotted each of the three images overlaid with their associated class. As can be seen, especially in image 2 and image 3, many pixels are unlabelled. Further, the distribution of labeled pixels also varies according to the images. This is further captured in Figure \ref{fig:label_dist}, which shows that the proportionality between the three classes varies significantly between the 3 data units. For example, image 2 has a majority of points unlabelled, but image 1 has the majority of points labeled. Images 2 and 3 have more labeled surface pixels than cloud pixels, and image 1 has the most labeled surface and cloud pixels.
+We first plot the spatial distribution of labels image-wise. This is shown in Figure \ref{fig:image_labels}, where we have plotted each of the three images overlaid with their associated class. As can be seen, especially in image 2 and image 3, many pixels are unlabelled. Further, the placement of labeled pixels also varies according to the images. This is further captured in Figure \ref{fig:label_dist}, which shows that the proportionality between the three classes varies significantly across images. Image 2 has a majority of points unlabelled, but image 1 has the majority of points labeled. Given the variations among the Satellite images, a reasonable classifier should be able to handle unbalanced classes while simultaneously generalizing well to a whole range of unseen Arctic satellite images --- one with absolutely no cloud or full cloud coverage.
 
 \begin{figure}[!h]
 \centering
 % \captionsetup{justification=centering}
-\includegraphics[width=0.48\textwidth]{statics/2.a.png}
+\includegraphics[width=0.48\textwidth]{2.a.png}
 \caption{Label distribution percentages for the three images in our dataset}
 \label{fig:label_dist}
 \end{figure}
 
-\subsection{i.i.d Assumption}
-The spatial distribution plots of labels also show how highly correlated the labels are to the spatial location of the images. In all three images, we can see large patches of pixels with the same label. This tells us that nearby pixels in the same image are likely to have the same labels. For example, if we predict by using the neighboring pixel, we can do extremely well due to data leakage. Hence, if we blindly do the model training using the typical randomized K-folds, the resulting scores are not that informative. In other words, the pixels are not i.i.d samples; we need to be particularly cautious about this in the training procedure.
+The dispersion of labels also shows how highly correlated the labels are to the spatial location of the images. In all three images, we can see large patches of pixels with the same label. This tells us that nearby pixels in the same image are likely to have the same labels. For example, if we predict by using the neighboring pixel, we can do extremely well due to data leakage. Hence, if we blindly do the model training using the typical randomized K-folds, the resulting scores are not that informative. In other words, the usual i.i.d samples assumption is inappropriate here; we must be particularly cautious about this in the training procedure.
 
-\subsection{Covariate Distribution}
-We first investigate the distribution between the 3 expert engineered features, NDAI, CORR, and SD. SD has a much larger range than the rest; thus, we applied a log transformation for plotting purposes. Figure \ref{fig:covariate_dist} is a pair plot of the 3 covariates NDAI, Corr, and Log(SD). We can see that the individual histograms for all 3 variables are quite separated, all 3 forming distinct bimodal distributions. The pairwise scatter plots also appear, relatively well separated between variables such as in CORR against NDAI, the non-cloud and cloud point likely to have the same labels, meaning that the pixels should not be points that tend to have a tail region that intersects with the cloud data points probability mass.
 
-Next, we plot the features spatially with each pixel in its x-y coordinate overlaid with the feature's value. This is displayed in Figure \ref{fig:spatial_dist_covariates}, where we have plotted the values of NDAI, Corr, and Log(SD) for the three images. There are several observations. Firstly, We can see that the values of the features are highly correlated spatially, meaning that neighboring pixels tend to have similar covariate values. This is unsurprising since the features of each pixel are derived based on the xx features from neighboring pixels. Interestingly we also observed that there is not one expert-engineered feature that perfectly aligns with all the labeled values in all the 3 images. That is to say that a high-performing classifier will likely need to use a combination of the features because a linear separating hyperplane does not exist.
+\subsection{Covariate Signals}
+We first investigate the distribution between the 3 expert engineered features, NDAI, CORR, and SD\footnote{SD has a much larger range than the rest; thus, we applied a log transformation for plotting purposes.}. Figure \ref{fig:covariate_pairplot} provides a pair plot of the 8 covariates, in either 1-D or 2-D KDE plots, that are available to us. We can see that all engineered features provide some signals from a different angle, and all the raw radiance measurements add little to no signal to the classification problem.
+
+We notice a few interesting facts starting at the diagonal 1-D KDE plots. Most surface pixels have NDAI less than 0, CORR less than 0.25, and lower SD. NDAI alone provides an outstanding separability out-of-box. By plotting NDAI against SD, we see the two classes are already on their own distinct density mass with a slight overlap. The subplot in column 3 and row 1, CORR adds more information by stating that Cloud particles tend to have a higher spatial correlation. The surface particles have a low correlation across the spectrum, less than $0.25$. And the cloud particles, on the other hand, tend to have a higher correlation greater than $0.25$.
+
+Next, we plot the features spatially with each pixel in its x-y coordinate overlaid with the three most influential features, NDAI, Corr, and Log(SD), in Figure \ref{fig:spatial_dist_covariates}. Firstly, we see that the values of the features are highly spatially correlated, meaning that neighboring pixels tend to have similar values. This is unsurprising since the expert features are derived based on a convolution kernel of either a 5x5 or 8x8 around the neighboring pixels. Interestingly we also observed that there is not one expert-engineered feature that perfectly aligns with all the labeled values in all the 3 images. That is to say that a high-performing classifier will likely need to use a combination of the features because a linear separating hyperplane does not exist.
 
 \begin{figure*}[!h]
 \centering
 % \captionsetup{justification=centering}
-\includegraphics[width=0.9\textwidth]{statics/2.c.png}
-\caption{Pair Plot of All Features}
+\includegraphics[width=1.04\textwidth]{2.c.png}
+\caption{Pair plot of all 8 features}
 \label{fig:covariate_pairplot}
 \end{figure*}
 
-% \begin{figure*}[!h]
-% \centering
-% % \captionsetup{justification=centering}
-% \includegraphics[width=0.9\textwidth]{statics/example_pair_plot.png}
-% \caption{Pair Plot of NDAI, CORR and log(SD)}
-% \label{fig:covariate_dist}
-% \end{figure*}
-
-% \begin{figure*}[!h]
-% \centering
-% % \captionsetup{justification=centering}
-% \includegraphics[width=0.9\textwidth]{statics/image_spatial_features.png}
-% \caption{Each image over laid with values for NDAI, Corr, and Log(SD). Red represents high values and blue low values}
-% \label{fig:spatial_dist_covariates}
-% \end{figure*}
+\begin{figure}[!h]
+\centering
+% \captionsetup{justification=centering}
+\includegraphics[width=0.5\textwidth]{image_spatial_features.png}
+\caption{Each image overlaid with values for NDAI, CORR, and Log(SD). Red represents high values and blue low values}
+\label{fig:spatial_dist_covariates}
+\end{figure}
 
 
 \section{Preparation}
-\subsection{Data Splitting}
-The main challenge with splitting the data is that the features NDAI, SD and CORR for a given pixel (line of data) are constructed by taking averages of values from neighboring pixels. This implies that pixels in same patches of the images will have feature values that are highly correlated to each other. Thus due to this spatial relation, the data cannot be treated as IID. To handle this spatial dependence we propose a specialized cross - validation and testing strategy. 
-\\
-\begin{figure}%
-    \centering
-    \subfloat[\centering Test Schema 1]{{\includegraphics[width=8.5cm]{statics/test_scheme1.png} }}%
-    \qquad
-    \subfloat[\centering Test Schema 2]{{\includegraphics[width=8.5cm]{statics/test_scheme2.png} }}%
-    \caption{Two different methods of cross validation and training. Grey patches represents training data, orange patches represent validation set, green patches represent test data.}%
-    \label{fig:test_schema}%
-\end{figure}
 
-In these strategies, the validation approach remain the same whereas the the test set differs. Primarily our approach seeks to reduce data leakage induced by the spatial dependency by removing an appropriately sized neighbourhood around a chosen test/validation patch. This is illustrated in \ref{fig:test_schema}. Here the gray patches represent the training set of pixels extracted from a given image, the orange samples represent the patch of an image used of validation. The white region represents data points that are omitted as these points if used in the training set will contain information about the pixels in the validation / test set. The validation patch is then shifted around the image with each shift forming a cross validation fold. 
-\\
-\\
-To test, we consider two schemes. \underline{Test Scheme 1} we use images 1 and 2 as for training and cross validation, and assess the model on all pixels in image3. \underline{Test Scheme 2} we use images 1, 2 and 3 as a combined training, cross validation and test set. Here we an additional patch as seen in b) of \ref{fig:test_schema}, highlighting that at each fold we also segment a part of the image and test on that. 
+\subsection{Data Splitting}
+Most out-of-box cross-validation (CV) methodology assumes i.i.d samples, which do not play well with the images that inherently contain spatial-temporal correlation. For instance, images can be taken at the same location but at different times, and neighboring pixels are highly correlated with each other. Image pixels are not i.i.d samples. If we are not careful with our training procedure, we can introduce unwarranted data leakage and unjustified scores. To alleviate the potential data leakage issue, we propose two specialized cross-validate-test (CVT) strategies to handle this spatial dependence shown in Figure \ref{fig:test_schema}.
+
+\begin{figure*}
+    \centering
+    \subfloat[\centering Test Schema 1]{{ \includegraphics[width=0.5\textwidth]{test_scheme1.png} }}
+    \subfloat[\centering Test Schema 2]{{ \includegraphics[width=0.5\textwidth]{test_scheme2.png} }}
+    \caption{Two different CVT methods. \textcolor{Gray}{Gray} patches represent training data, \textcolor{orange}{orange} patches represent validation data, and \textcolor{ForestGreen}{green} patches represent test data.}%
+    \label{fig:test_schema}%
+\end{figure*}
+
+\subsubsection{CVT Scheme 1}
+With only 3 image units given, we first keep image 1, the one with most of the pixels labeled, out for our testing set, then use the other 2 images for the training and validation set. The procedure is illustrated in the left plot of Figure \ref{fig:test_schema}. In other words, we train and tune our models using only 2 images and test on the last image. Then, we pick a $55\times55$ kernel size that defines our validation set, shown in \textcolor{orange}{orange}, and remove the surrounding pixels of the kernel completely from the training set, shown in the white spaces. If used in training, the white region represents omitted data points, as these points will contain information about the pixels in the validation/test set. Then, the remaining gray area is the training set. Note this CV procedure is applied on the 2 training images simultaneously and at the same patch. It is important because taking validation patches at different areas can potentially introduce leakage if the two images were shot at the same location. Lastly, the validation patch shifts around the image, with each shift forming a cross-validation (CV) fold. Although it is not the best use of limited data, it ensures there is no data leakage through spatial dependencies. 
+
+\subsubsection{CVT Scheme 2}
+The validation approach remains the same in these strategies, but the testing method differs in the second Scheme. We introduce a nested approach to make the most use of the limited data. In other words, we can train, validate, and test each at the same time each fold instead of keeping one testing image out completely. To illustrate, the right plot of Figure \ref{fig:test_schema} contains an example. With this procedure, we can use all 3 images as a combined training, CV, and test set. Here we have an additional \textcolor{ForestGreen}{green} patch representing our test set only with the \textcolor{orange}{orange} validation set. We segment a part of the image at each fold and use it in testing. While both patches shift around the image, everything else stays the same, 
+
 \subsection{Baseline}
-For both the test schemes, we compute the accuracy of a trivial classifier, which sets all labels to cloud free. These results are reported in #table.
+We compute the accuracy of a trivial classifier for both test schemes, which sets all labels to cloud-free. These results are reported in Table \ref{tab:scheme1_results}. We see that a naive classifier that predicts all pixels are surface achieves around 52\% accuracy, which is well underperforming from the rest of the classifiers. Such exercise sets the baseline that the result we achieve here is not trivial.
 
 \subsection{First Order Importance}
-
-...
+In section 2.B, we extensively covered the importance of features, which is also shown in Figure \ref{fig:covariate_pairplot}. We can achieve pretty far on the classification task by only using the expert-engineered features, NDAI, CORR, and SD. We can see in the KDE plot of NDAI and SD that surface and cloud pixels form distinct density mass with a slight overlap. Adding CORR into the mix, by identifying pixels with low correlation are typically surface pixels, we can achieve a reasonable result that should remember like a logistic regression using only these 3 features.
 
 
 \section{Modeling}
 \subsection{Models Used and Assumptions}
-We try 4 classification methods, logistic regression (L2 regularized), CART, Random Forest and Adaboost. Firstly we provide some brief commentary on the assumptions of these models.
+We try 4 classification methods, logistic regression (L2 regularized), CART, Random Forest, and Adaboost. Firstly we provide some brief commentary on the assumptions of these models.
 \begin{itemize}
-    \item \underline{Logistic Regression}. This model is linear and assumes linear decision boundary between the two classes, from our plots the data seems well separated linearly by most of the features, however we cannot be sure in the high dimensional space.
+    \item \underline{Logistic Regression}. This model is linear and assumes a linear decision boundary between the two classes, from our plots the data seems well separated linearly by most of the features, however we cannot be sure in the high dimensional space.
     \item \underline{CART}. This model is non-linear but partitions the feature space into rectangles. In particular it will generally perform worse if the decision boundary is not axis aligned. 
     \item \underline{Random Forest}. This model is non-linear and uses bootstrap aggregation to reduce variance. Another point that is important is that the model works better when the set of trees trained is less correlated, one factor that affects this is if different covariates used are correlated. This is something that affects us since we use all 7 features, but we know that 3 of the features (NDAI, CORR and SD) are actually transforms of the remaining 4.
     \item \underline{Adaboost}. This model is also non-linear and uses boosting to overcome limitations of a single weak classifier. In this case we use a pruned CART tree as the weak learner. There are not many assumptions of this model that affect our use of it.
@@ -140,21 +135,20 @@ We use patch sizes of 55x55. In total this produces 44 folds for cross validatio
 \begin{center}
 \resizebox{\columnwidth}{!}{
 \begin{tabular}{||c c c c c||} 
-
- \hline
-Model & CV Acc. & CV B. Acc. & Test Acc. & Test B. Acc. \\ [0.5ex] 
- \hline\hline
- LR & 0.880 & 0.869 & 0.769 & 0.764 \\ 
- \hline
- RF& 0.881 & 0.876 & 0.494 & 0.645 \\
- \hline
- CART & 0.872 & 0.868 & 0.759 & 0.749 \\
- \hline
- Adaboost & 0.884 & 0.874 & 0.788 & 0.778 \\
- \hline
+    \hline
+    Model & CV Acc. & CV B.Acc. & Test Acc. & Test B.Acc. \\ [0.5ex] 
+    \hline\hline
+    LR & 0.880 & 0.869 & 0.769 & 0.764 \\ 
+    \hline
+    RF& 0.881 & 0.876 & 0.494 & 0.645 \\
+    \hline
+    CART & 0.872 & 0.868 & 0.759 & 0.749 \\
+    \hline
+    Adaboost & 0.884 & 0.874 & 0.788 & 0.778 \\
+    \hline
 \end{tabular}
 }
-\caption{CV results and test set results for the 4 models under test scheme 1}
+\caption{CV and test results for the 4 models under test scheme 1. "B.Acc" stands for balanced accuracy.}
 \label{tab:scheme1_results}
 \end{center}
 \end{table}
@@ -164,21 +158,20 @@ Model & CV Acc. & CV B. Acc. & Test Acc. & Test B. Acc. \\ [0.5ex]
 \begin{center}
 \resizebox{\columnwidth}{!}{
 \begin{tabular}{||c c c c c||} 
-
- \hline
-Model & CV Acc. & CV B. Acc. & Test Acc. & Test B. Acc. \\ [0.5ex] 
- \hline\hline
- LR & 0.877 & 0.820 & 0.877 & 0.820 \\ 
- \hline
- RF& 0.878 & 0.819 & 0.877 & 0.814 \\
- \hline
- CART & 0.860 & 0.821 & 0.860 & 0.821 \\
- \hline
- Adaboost & 0.867 & 0.805 & 0.867 & 0.805 \\
- \hline
+\hline
+Model & CV Acc. & CV B.Acc. & Test Acc. & Test B.Acc. \\ [0.5ex] 
+\hline\hline
+LR & 0.877 & 0.820 & 0.877 & 0.820 \\ 
+\hline
+RF& 0.878 & 0.819 & 0.877 & 0.814 \\
+\hline
+CART & 0.860 & 0.821 & 0.860 & 0.821 \\
+\hline
+Adaboost & 0.867 & 0.805 & 0.867 & 0.805 \\
+\hline
 \end{tabular}
 }
-\caption{CV results and test set results for the 4 models under test scheme 2}
+\caption{CV and test set results for the 4 models under test scheme 2}
 \label{tab:scheme2_results}
 \end{center}
 \end{table}
