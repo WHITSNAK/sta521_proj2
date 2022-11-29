@@ -38,11 +38,7 @@ class SatelliteImageData:
         data = pd.concat(data)
         
         # Remap label names
-        remap_labels = {1:1,
-                        -1:0,
-                        0:2}
-        
-        data['label'] = data['label'].apply(lambda x: remap_labels[x])
+        data['label'] = data['label'].map({1: 1, -1: 0, 0: 2})
         
         data.sort_values(['x', 'y'], inplace=True)
         return data

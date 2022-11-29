@@ -54,7 +54,7 @@ def train_validate_test_classifer_v2(
     return score_val, (val_preds, val_probs), (X_val, y_val), score_test, (test_preds,test_probs), (X_test, y_test), clf
 
 
-def cv_classifer(clf: Callable, image_data: SatelliteImageData, metric: Callable, n_jobs=8,verbose=False, **kws) -> List[float]:
+def cv_classifer(clf: Callable, image_data: SatelliteImageData, metric: Callable, n_jobs=8, verbose=False, **kws) -> List[float]:
     """
     Cross Valide a Classfier using the Satallite Image Data
     """
