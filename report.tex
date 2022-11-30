@@ -68,7 +68,7 @@ The dispersion of labels also shows how highly correlated the labels are to the 
 \subsection{Covariate Signals}
 We first investigate the distribution between the 3 expert engineered features, NDAI, CORR, and SD\footnote{SD has a much larger range than the rest; thus, we applied a log transformation for plotting purposes.}. Figure \ref{fig:covariate_pairplot} provides a pair plot of the 8 covariates, in either 1-D or 2-D KDE plots, that are available to us. We can see that all engineered features provide some signals from a different angle, and all the raw radiance measurements add little to no signal to the classification problem.
 
-We notice a few interesting facts starting at the diagonal 1-D KDE plots. Most surface pixels have NDAI less than 0, CORR less than 0.25, and lower SD. NDAI alone provides an outstanding separability out-of-box. By plotting NDAI against SD, we see the two classes are already on their own distinct density mass with a slight overlap. The subplot in column 3 and row 1, CORR adds more information by stating that Cloud particles tend to have a higher spatial correlation. The surface particles have a low correlation across the spectrum, less than $0.25$. And the cloud particles, on the other hand, tend to have a higher correlation greater than $0.25$.
+We notice a few interesting facts starting at the diagonal 1-D KDE plots. Most surface pixels have NDAI less than 0, CORR less than 0.25, and lower SD. NDAI alone provides an outstanding separability out-of-box. By plotting NDAI against SD, we see the two classes are already on their own distinct density mass with a slight overlap. The subplot in column 3 and row 1, CORR, adds more information by stating that Cloud particles tend to have a higher spatial correlation. The surface particles have a low correlation across the spectrum, less than $0.25$. And the cloud particles, on the other hand, tend to have a higher correlation greater than $0.25$.
 
 Next, we plot the features spatially with each pixel in its x-y coordinate overlaid with the three most influential features, NDAI, Corr, and Log(SD), in Figure \ref{fig:spatial_dist_covariates}. Firstly, we see that the values of the features are highly spatially correlated, meaning that neighboring pixels tend to have similar values. This is unsurprising since the expert features are derived based on a convolution kernel of either a 5x5 or 8x8 around the neighboring pixels. Interestingly we also observed that there is not one expert-engineered feature that perfectly aligns with all the labeled values in all the 3 images. That is to say that a high-performing classifier will likely need to use a combination of the features because a linear separating hyperplane does not exist.
 
@@ -112,7 +112,7 @@ The validation approach remains the same in these strategies, but the testing me
 We compute the accuracy of a trivial classifier for both test schemes, which sets all labels to cloud-free. These results are reported in Table \ref{tab:scheme1_results}. We see that a naive classifier that predicts all pixels are surface achieves around 52\% accuracy, which is well underperforming from the rest of the classifiers. Such exercise sets the baseline that our result is not trivial.
 
 \subsection{First Order Importance}
-In section 2.B, we extensively covered the importance of features, which is also shown in Figure \ref{fig:covariate_pairplot}. We can achieve pretty far on the classification task by only using the expert-engineered features, NDAI, CORR, and SD. We can see in the KDE plot of NDAI and SD that surface and cloud pixels form distinct density mass with a slight overlap. Adding CORR into the mix, by identifying pixels with low correlation are typically surface pixels, we can achieve a reasonable result that should resemble a logistic regression using only these 3 features.
+In section 2.B, we covered the importance of features, which is also shown in Figure \ref{fig:covariate_pairplot}. Here we are just reciting the content to highlight that the 3 expert-engineered features are well-designed. We can achieve pretty far on the classification task by only using the expert-engineered features, NDAI, CORR, and SD. We can see in the KDE plot of NDAI and SD that surface and cloud pixels form distinct density mass with a slight overlap. Adding CORR into the mix by identifying pixels with low correlation are typically surface pixels, we can achieve a reasonable result that should resemble a logistic regression using only these 3 features.
 
 
 \section{Modeling}
@@ -124,17 +124,20 @@ For the next couple of sections, we compare 4 different classification methods, 
     \item \underline{Random Forest}. This model is non-linear and uses bootstrap aggregation to reduce variance. Another important point is that the model works better when the set of trees trained is less correlated. One factor that affects this is if different covariates used are correlated. This is something that affects us since we use all 8 features, but we know that 3 of the features (NDAI, CORR, and SD) actually transform the other 4.
     \item \underline{Adaboost}. This model is also non-linear and uses boosting to overcome the limitations of a single weak classifier. In this case, we use a pruned CART tree, with only 1 depth, as the weak learner. Not many assumptions of this model affect our use of it.
 \end{itemize}
-\\
 
 
 \subsection{CV Results}
-We use patch sizes of 55x55. In total, this produces 44 folds for cross-validation for test scheme 1. And 40 folds for cross-validation/testing in test scheme 2. We consider two metrics, accuracy and balanced accuracy, for computing the CV errors and test error for both test schemes. 
+We use patch sizes of 55x55. In total, this produces 44 folds for cross-validation for test scheme 1. And 40 folds for cross-validation/testing in test scheme 2. We consider two metrics, accuracy and balanced accuracy, for computing the CV errors and test errors for both test schemes. Aggregated validation and test results are provided in Tables \ref{tab:scheme1_results} and \ref{tab:scheme2_results} for test schemes 1 and 2, respectively. \textcolor{red}{Add commentary about model results}.
+
+These tables also show the difference between test scheme 1 and test scheme 2. We can see that the CV results and the test results are very similar in test scheme 2 (as seen from Table \ref{tab:scheme2_results}), whereas the test results in Table \ref{tab:scheme1_results} are generally worse than the CV results. This reflects the fact that test scheme 2 eventually uses the same data set; hence, we expect both to produce similar scores. In contrast with test scheme 1, the test procedure (testing on 1 image) is quite different from the validation procedure. We see that test scheme 1 allows us to detect the overfitting of some models even when high CV accuracy is shown. This is the case in the Random Forest model, which had the second-best performing CV accuracy, but the poorest test accuracy.
+
+More insights can be gleaned from Figures \ref{fig:fold_results_1} and \ref{fig:fold_results_2}, which plot the individual fold errors. Things to note here are that the errors fluctuate a fair bit over the different folds. This is due to our patch-wise formation of the validation set, meaning that the labels in most patches will be similar. In subsequent sections, we analyze whether our model makes errors on certain labels systematically. 
 
 % Results 1 table
 \begin{table}
 \begin{center}
 \resizebox{\columnwidth}{!}{
-\begin{tabular}{||c c c c c||} 
+\begin{tabular}{||c | c c c c||} 
     \hline
     Model & CV Acc. & CV B.Acc. & Test Acc. & Test B.Acc. \\ [0.5ex] 
     \hline\hline
@@ -157,7 +160,7 @@ We use patch sizes of 55x55. In total, this produces 44 folds for cross-validati
 \begin{table}
 \begin{center}
 \resizebox{\columnwidth}{!}{
-\begin{tabular}{||c c c c c||} 
+\begin{tabular}{||c | c c c c||} 
 \hline
 Model & CV Acc. & CV B.Acc. & Test Acc. & Test B.Acc. \\ [0.5ex] 
 \hline\hline
@@ -190,14 +193,6 @@ Adaboost & 0.867 & 0.805 & 0.867 & 0.805 \\
 \label{fig:fold_results_2}
 \end{figure}
 
-\\
-Aggregated validation and test results are provided in Tables \ref{tab:scheme1_results} and \ref{tab:scheme2_results} for test scheme 1 and 2 respectively. \textcolor{red}{Add commentary about model results}.
-\\
-These tables also show the difference in test scheme 1 and test scheme 2. We can see that the CV results and the test results are very similar in test scheme 2 (as seen from Table \ref{tab:scheme2_results}), whereas the test results in Table \ref{tab:scheme1_results} are generally worse than the CV results. This reflects the fact that in test scheme 2, the nested test - validation procedure means that the validation and testing procedure at the exact same, hence we can expect that both produce similar errors. In contrast with test scheme 1, the test procedure (testing on 1 image) is quite different from the validation procedure. We see that test scheme 1 allows us to detect over fitting of some models even when high CV accuracy is shown. This is the case in the Random Forest model, which had the second best performing CV accuracy, but the poorest test accuracy.
-\\
-More insights can be gleaned from Figures \ref{fig:fold_results_1} and \ref{fig:fold_results_2} which plots the individual fold errors. Of key note here is that the errors fluctuate a fair bit over the different folds. This is due to our patch wise formation of the validation set, meaning that the labels in most of the patches are going to be similar. In subsequent sections we analyse whether our model systematically makes errors on certain labels. 
-
-
 
 \subsection{ROC Plots}
 We plot the ROC curves generated for both the validation and test set(s) used in testing scheme 1 and testing scheme 2. These are displayed in \ref{fig:ROC_curves scheme1} and \ref{fig:ROC_curves scheme2}. An ROC curve highlights the predicted true positive rate a model can achieve for a given false positive rate (or vice versa). (Insert explanation about which do we care more about).
@@ -224,87 +219,69 @@ Intuitively a model that has a more favourable trade off between the two is bett
 
 
 \section{Diagnostics}
-We base on our choice of model on performance on testing scheme 1. This is because the testing scheme 1 better reflects the actual use case of the model, where inference will be made on whole images. Hence we choose the the Adaboost model which has the best validation and test performance. 
+We base our choice of the model on performance on testing scheme 1. This is because testing scheme 1 better reflects the actual use case of the model, where inference will be made on whole images. Hence we choose the Adaboost model with the best validation and test performance.
 
 \subsection{Analysis of Adaboost}
-To analyse the converge we look at the sequence of error rate generated by the boosting alrogithm. We also analyse the feature importance to check for stability in the chosen features over the various validation folds and train set.
-\subsubsection{Convergence Analysis}
-Being an iterative algorithm, we first assess the performance of the adaboost learner across each iteration. This is displayed in \ref{fig:Adaboost_iterations}. We see that the test error of the algorithm converges, starting to rise after initially decreasing after just 25 boosting iterations. More boosting iterations are likely to result in over fitting of the training set. We believe that the algorithm converges with so little boosting iterations due to the expert labelled features which provide a large amount of information to the model. As can be see even the initial decision stump is able to achieve close to 12.4\% train error.
-
 \begin{figure}[h]
-\centering
-\includegraphics[width=0.52\textwidth]{statics/ada_iterations.png}
-\caption{Percentage error across subsequent iterations of Adaboost. Left: Error on Train Set, Right: Error on Test Set.}
-\label{fig:Adaboost_iterations}
+    \centering
+    \includegraphics[width=0.52\textwidth]{statics/ada_iterations.png}
+    \caption{Percentage error across subsequent iterations of Adaboost. Left: Error on Train Set, Right: Error on Test Set.}
+    \label{fig:Adaboost_iterations}
 \end{figure}
 
+\begin{figure}[h]
+    \centering
+    \includegraphics[width=0.5\textwidth]{statics/Feature_importance_test_scheme1.png}
+    \caption{Feature Importance of Adaboost for 1) model trained on full train and validation set. 2) Each CV fold 3) Average across CV folds.}
+    \label{fig:Feature_importance ts1}
+\end{figure}
+
+We look at the sequence of error rates generated by the boosting algorithm to analyze the convergence. We also analyze the feature importance to check for stability in the chosen features over the various validation folds and train sets.
+
+\subsubsection{Convergence Analysis}
+Being an iterative algorithm, we first assess the performance of the AdaBoost learner across each iteration. This is displayed in \ref{fig:Adaboost_iterations}. We see that the test error of the algorithm converges, starting to rise after initially decreasing after just 25 boosting iterations. More boosting iterations are likely to result in overfitting of the training set. We believe that the algorithm converges with so few boosting iterations because the expert-engineered features provide a large amount of information to the model. As can be seen, even the initial decision stump can achieve close to 12.4\% train error.
 
 \subsubsection{Feature Importance}
-Next we assess the stability of the adaboost model via its learnt feature importance. This feature importance scored is calculated by aggregating, for a single run the feature importance of each weak learner (decision tree) learnt by the algorithm. We calculate feature importance in test scheme 1 for 1) Model trained on the full train/validation set 2) Model trained at each cross validation fold. These results are shown in Figure \ref{fig:Feature_importance ts1}.
-
-\begin{figure}[h]
-\centering
-\includegraphics[width=0.5\textwidth]{statics/Feature_importance_test_scheme1.png}
-\caption{Feature Importance of Adaboost for 1) model trained on full train and validation set. 2) Each CV fold 3) Average across CV folds.}
-\label{fig:Feature_importance ts1}
-\end{figure}
-
-\\
-Comparing the learnt feature importance we see that the model learnt on the full training set generally matches those learnt in the cross validation models. For example, NDAI is consistently the highest ranked feature. Likewise Corr is ranked highly in both the testing model and the cross validation models. This similarity in feature importance indicates model stability across the various data splits and with the final test model. 
+Next, we assess the stability of the Adaboost model via its learned feature importance. This feature importance score is calculated by aggregating, for a single run, the feature importance of each weak learner (decision tree) learned by the algorithm. We calculate feature importance in test scheme 1 for 1) the Model trained on the full train/validation set and 2) the Model trained at each cross-validation fold. These results are shown in Figure \ref{fig:Feature_importance ts1}. Comparing the learned feature importance, we see that the model learned on the full training set generally matches those learned in the cross-validation models. For example, NDAI is consistently the highest-ranked feature. Likewise, CORR is ranked highly in both the testing and cross-validation models. This similarity in feature importance indicates model stability across the various data splits and with the final test model. 
 
 \subsection{Analysing Error Patterns}
-We analyse error patterns mainly by looking at the predicted probabilities across different spatial regions as well as different regions in the feature space. The latter poses challenges due to the high dimensional nature of the feature space. We describe in subsequent sections how we overcame this using dimensionality reduction.
-\subsubsection{Prediction Probabilities}
-Next we investigate how well calibrated the probabilities generated by Adaboost is. This will give us insights into have the algorithm performs. For each image, we generate predictions of the probability of a cloud prediction for each pixel. We then compare this to the true expert labelled pixels. These are plotted in Figure \ref{fig:Probability_Preds}.
-
-\begin{figure}%
+\begin{figure}
     \centering
-    \subfloat[\centering Test Image 1]{{\includegraphics[width=9.3cm]{statics/ada_test_prob.png} }}%
+    \subfloat[\centering Test - Image 1]{{\includegraphics[width=0.48\textwidth]{ada_test_prob.png} }}
     \qquad
-    \subfloat[\centering Train Image 1]{{\includegraphics[width=9.3cm]{statics/ada_train_prob1.png} }}%
+    \subfloat[\centering Train - Image 2]{{\includegraphics[width=0.48\textwidth]{ada_train_prob1.png} }}
     \qquad
-    \subfloat[\centering Train Image 2]{{\includegraphics[width=9.3cm]{statics/ada_train_prob2.png} }}%
-    \caption{Left Column: Pixels colored by expert labels, Red: Clouds, Blue: No Clouds, White: Unlabelled. Right Column: Predicted probability given by the model.}%
-    \label{fig:Probability_Preds}%
+    \subfloat[\centering Train - Image 3]{{\includegraphics[width=0.48\textwidth]{ada_train_prob2.png} }}
+    \caption{Left Column: Pixels colored by expert labels, Red: Clouds, Blue: No Clouds, White: Unlabelled. Right Column: Predicted probability given by the model.}
+    \label{fig:Probability_Preds}
 \end{figure}
-\\
-Firstly for the training case, we can see clearly that across image 1 and 2, there are more non-cloud labelled points than cloud points. This create a bias in the training data. Interestingly we see that the model seems to be biased towards predicting a pixel as a cloud. With large swaths of the image's predicted probability being slightly greater than 0.5. For example in the first training image, we see mis-classification occurs in non-cloud regions being predicted as clouds in areas where the non-cloud regions are surrounded by clouds. The same is seen in the second training image, where only the right most patch of non-cloud regions is successfully predicted by the adaboost algorithm. 
-\\
-Another point to note is that the model is generally very cautious about its probability prediction for the cloud class, with the highest predicted probability being only 0.61. In contrast, it is more confident about predicting a non-cloud, with predictive probabilities reaching 0.113. This is reflected in Figure \ref{fig:Probability_Preds}, where the red probability regions are very faint, and the blue probability regions are darker. This is a positive feature of the model since the train set generally has less cloud labelled points, hence it is natural that the model should generally be less confident about predicting points as the cloud class. In contrast, since the dataset has relatively more non-cloud class, the model has become more confident when predicting them. Thus we have reason to believe that given more training data, the model will become more confident about its cloud class prediction.
+
+\begin{figure}
+    \centering
+    \subfloat[\centering Low Dimension Representation of Adaboost Decision Surface]{{\includegraphics[width=0.48\textwidth]{statics/PCA_decision_surface.png} }}
+    \qquad
+    \subfloat[\centering Low Dimension Representation of Logistic Regression Decision Surface]{{\includegraphics[width=0.48\textwidth]{statics/log_reg_decision_surface.png} }}
+    \caption{Decision Surfaces of Adaboost (Top) and Logistic Regression (Bottom). }
+    \label{fig:decision_surface}
+\end{figure}
+
+We analyze error patterns mainly by looking at the predicted probabilities across different spatial regions and regions in the feature space. The latter poses challenges due to the high dimensional nature of the feature space. We describe in subsequent sections how we overcame this using the dimensionality reduction method.
+
+\subsubsection{Prediction Probabilities}
+We first investigate how well-calibrated the predicted probabilities generated by Adaboost are. This gives us insights into how the algorithm performs. For each image, we generate predictions of the probability of a cloud prediction for each pixel. We then compare this to the true expert-labeled pixels. These are plotted in Figure \ref{fig:Probability_Preds}. Firstly for the training case, we can see clearly that across images 2 and 3, there are more non-cloud labeled points than cloud points. This creates a bias in the training data. Interestingly we see that the model seems to be biased toward predicting a pixel as a cloud, with large swaths of the image's predicted probability being slightly greater than 0.5. For example, in the first training image, we see misclassification occurs in non-cloud regions being predicted as clouds in areas where the non-cloud regions are surrounded by clouds, where the transition takes place. The same is seen in the second training image, where only the rightmost patch of non-cloud regions is successfully predicted by the AdaBoost algorithm. Another point to note is that the model is generally very cautious about its probability prediction for the cloud class, with the highest predicted probability being only 0.61. In contrast, it is more confident about predicting a non-cloud, with predictive probabilities reaching 0.113. This is reflected in Figure \ref{fig:Probability_Preds}, where the red probability regions are very faint, and the blue probability regions are darker. This is a positive feature of the model since the train set generally has fewer cloud-labeled points; hence it is natural that the model should generally be less confident about predicting points as the cloud class. In contrast, since the dataset has relatively more non-cloud classes, the model has become more confident when predicting them. In other words, the model found predicting the surface pixels much easier. Thus we have reason to believe that given more training data, the model will become more confident about its cloud class prediction.
 
 \subsubsection{Decision Surface Analysis}
-Next we analyze the decision surface of Adaboost. This is a similar analysis to that in the previous section, except that now instead of analyzing predicted probabilities with respect to the spatial coordinates of the pixel, we do so with respect to the features used. 
-\\
-\\
-There are in total 7 features used, meaning that the decision surface cannot be easily visualized due to the high dimension. We thus conduct a PCA first, projecting the feature space into 2 dimensions. This learnt PCA can then used to inversely project a grid of 2 dimension points to the covariate space which we can then classify using the model. Doing this we obtain can obtain a low - diemsional representation of the decision surface our model. This is represented in Figure \ref{fig:decision_surface}. \\
-
-\begin{figure}%
-    \centering
-    \subfloat[\centering Low Dimension Representation of Adaboost Decision Surface]{{\includegraphics[width=10cm]{statics/PCA_decision_surface.png} }}%
-    \qquad
-    \subfloat[\centering Low Dimension Representation of Logistic Regression Decision Surface]{{\includegraphics[width=10cm]{statics/log_reg_decision_surface.png} }}%
-
-    \caption{Decision Surfaces of Adaboost (Top) and Logistic Regression (Bottom). }%
-    \label{fig:decision_surface}%
-\end{figure}
-
-For comparison we have plotted the decision surface of logistic regression model. Once again we can see a similar trend as in Figure \ref{fig:Probability_Preds}. The model tends to be more confident in the non cloud (blue) prediction versus the cloud (red) prediction. We further see a more complex decision surface where regions with mostly cloud points have high classification probability. As the space becomes mixed with cloud and non cloud points the confidence in classifying as non-clouds steadily decreases and starts to shift towards classifying as clouds as the we move into the space populated mainly by cloud points. Interestingly, as we move further towards the top right of the 2D space the model actually becomes less confident about its predictions. Contrast this to the decision surface generated by the logistic regression. In this case the decision surface is almost uniformly confident throughout in the two regions of its decision surface, it is exhibits very high confidence in regions where there is little data, or where there is a lot of overlapping data from both classes.\\
-
-Combining the decision surface and the pixel wise probabilities in Figure \ref{fig:Probability_Preds}. We conclude that the Adaboost algorithm is able to learn sensible probabilities. This accurate quantification of uncertainty by the Adaboost algorithm is important given the small amount of data available in the problem. Further, we see that as more data is given Adaboost becomes more confident in its prediction, meaning that it has enough capacity to learn even more complex decision surfaces given more data. 
-
+Next, we analyze the decision surface of Adaboost. This is a similar analysis to that in the previous section, except that now instead of analyzing predicted probabilities concerning the spatial coordinates of the pixel, we do so for the features used. There are in total 7 features used, meaning that the decision surface cannot be easily visualized due to the high dimension. We thus conduct a PCA first, projecting the feature space into 2 dimensions. These learned PCA components are then used to inversely project a grid of 2 dimension points to the covariate space, which we can then classify using the model. By doing this, we can obtain a low-dimensional representation of the decision surface of our model. This is represented in Figure \ref{fig:decision_surface}. For comparison, we have also plotted the decision surface of the logistic regression model. Once again, we can see a similar trend as in Figure \ref{fig:Probability_Preds}. The model tends to be more confident in the non-cloud (blue) prediction versus the cloud (red) prediction. We further see a more complex decision surface where regions with mostly cloud points have high classification probability. As the space becomes mixed with cloud and non-cloud points, the confidence in classifying as non-clouds steadily decreases and shifts towards classifying as clouds as we move into the space populated mainly by cloud points. Interestingly, as we move further toward the top right of the 2D space, the model becomes less confident about its predictions. Contrast this to the decision surface generated by the logistic regression. In this case, the decision surface is almost uniformly confident throughout the two regions of its decision surface. It exhibits very high confidence in regions with little data or where there is a lot of overlapping data from both classes. Combining the decision surface and the pixel-wise probabilities in Figure \ref{fig:Probability_Preds}. We conclude that the Adaboost algorithm can learn sensible probabilities. This accurate quantification of uncertainty by the Adaboost algorithm is important given the small amount of data available in the problem. Further, we see that as more data is given, Adaboost becomes more confident in its prediction, meaning that it has enough capacity to learn even more complex decision surfaces given more data.
 
 \subsection{Alternative Classifiers}
-There are two key issues with our model. Firstly, our model ignores spatial dependencies between pixels; secondly, it is a supervised learning model that requires expert labels to train.
-\subsubsection{Spatial Dependencies}
-Several models can explicitly account for spatial dependencies in images. One example would be the convolutional neural network, which we could train to produce pixel-wise outputs of the cloud prediction based on the input features (stacked as an image). Another option that doesn't require expert labeling is the Ising / Potts model, which explicitly encodes the spatial dependencies via an undirected graph. These two models should perform better than our selected classifiers by directly modeling the innate spatial dependencies of the image data.
-\subsubsection{Limited Data Size}
-As said, our algorithm requires expert labels to train, which is often time-consuming and not easily obtainable. The main concern is the relatively small set of images we have for training. As such, we will likely encounter future test images of highly different covariate distributions (data drift) and also different covariate-to-output relations (concept drift). The currently trained classifier will perform poorly on these edge cases. As such, unless we have a bigger training dataset, we are not confident of the model's ability to generalize to a large set of new images. 
+There are two key issues with our model. Firstly, our model ignores spatial dependencies between pixels; secondly, it is a supervised learning model that requires expert labels to train. Several models can explicitly account for spatial dependencies in images. One example would be the convolutional neural network, which we could train to produce pixel-wise outputs of the cloud prediction based on the input features (stacked as an image). Another option that doesn't require expert labeling is the Ising / Potts model, which explicitly encodes the spatial dependencies via an undirected graph. These two models should perform better than our selected classifiers by directly modeling the innate spatial dependencies of the image data.
 
 \section{Conclusion}
+As said, our algorithm requires expert labels to train, which is often time-consuming and not easily obtainable. The main concern is the relatively small set of images we have for training. As such, we will likely encounter future test images of highly different covariate distributions (data drift) and also different covariate-to-output relations (concept drift). The currently trained classifier will perform poorly on these edge cases. As such, unless we have a bigger training dataset, we are not confident of the model's ability to generalize to a large set of new images.
 \begin{itemize}
-    \item We have shown that Adaboost is able to learn well calibrated decision surfaces, despite the relative lack of data.
+    \item We have shown that Adaboost can learn well-calibrated decision surfaces, despite the relative lack of data.
     \item Hence we are confident this algorithm will work well given a larger set of images.
-    \item The ability to generated predicted probabilities is also useful in labelling new images in the future, which we could do so via an active learning procedure.
+    \item The ability to generate predicted probabilities is also useful in labeling new images in the future, which we could do via an active learning procedure.
 \end{itemize}
 
 
