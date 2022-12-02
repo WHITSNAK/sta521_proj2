@@ -62,7 +62,7 @@ We first plot the spatial distribution of labels image-wise. This is shown in Fi
 \label{fig:label_dist}
 \end{figure}
 
-The dispersion of labels also shows how highly correlated the labels are to the spatial location of the images. In all three images, we can see large patches of pixels with the same label. This tells us that nearby pixels in the same image are likely to have the same labels. For example, if we predict by using the neighboring pixel, we can do extremely well due to data leakage. Hence, if we blindly do the model training using the typical randomized K-folds, the resulting scores are not that informative. In other words, the usual i.i.d samples assumption is inappropriate here; we must be particularly cautious about this in the training procedure.
+The dispersion of labels also shows how highly correlated the labels are to the spatial location of the images. We can see large patches of pixels in all three images with the same label. This tells us that nearby pixels in the same image are likely to have the same labels. For example, if we predict by using the neighboring pixel, we can do extremely well due to data leakage. Hence, if we blindly do the model training using the typical randomized K-folds, the resulting scores are not that informative. In other words, the usual i.i.d samples assumption is inappropriate here; we must be particularly cautious about this in the training procedure.
 
 
 \subsection{Covariate Signals}
@@ -121,7 +121,7 @@ For the next couple of sections, we compare 4 different classification methods, 
 \begin{itemize}
     \item \underline{Logistic Regression}. This model assumes a linear decision boundary between the two classes. According to our EDA, we should expect it to achieve a reasonable result since the data seems well separated linearly using just the 3 expert-engineered features. However, we cannot be sure about the high-dimensional space.
     \item \underline{CART}. This model is non-linear and partitions the feature space into rectangles. In particular, it will perform worse if the decision boundary is not axis aligned. 
-    \item \underline{Random Forest}. This model is non-linear and uses bootstrap aggregation to reduce variance. Another important point is that the model works better when the set of trees trained is less correlated. One factor that affects this is if different covariates used are correlated. This is something that affects us since we use all 8 features, but we know that 3 of the features (NDAI, CORR, and SD) actually transform the other 4.
+    \item \underline{Random Forest}. This model is non-linear and uses bootstrap aggregation to reduce variance. Another important point is that the model works better when the set of trees trained is less correlated. One factor that affects this is if different covariates used are correlated. This is something that affects us since we use all 8 features, but we know that 3 of the features (NDAI, CORR, and SD) actually are transformations of the other 4.
     \item \underline{Adaboost}. This model is also non-linear and uses boosting to overcome the limitations of a single weak classifier. In this case, we use a pruned CART tree, with only 1 depth, as the weak learner. Not many assumptions of this model affect our use of it.
 \end{itemize}
 
@@ -131,7 +131,7 @@ We use patch sizes of 55x55. In total, this produces 44 folds for cross-validati
 
 These tables also show the difference between test scheme 1 and test scheme 2. We can see that the CV results and the test results are very similar in test scheme 2 (as seen from Table \ref{tab:scheme2_results}), whereas the test results in Table \ref{tab:scheme1_results} are generally worse than the CV results. This reflects the fact that test scheme 2 eventually uses the same data set; hence, we expect both to produce similar scores. In contrast with test scheme 1, the test procedure (testing on 1 image) is quite different from the validation procedure. We see that test scheme 1 allows us to detect the overfitting of some models even when high CV accuracy is shown. This is the case in the Random Forest model, which had the second-best performing CV accuracy, but the poorest test accuracy.
 
-More insights can be gleaned from Figures \ref{fig:fold_results_1} and \ref{fig:fold_results_2}, which plot the individual fold errors. Things to note here are that the errors fluctuate a fair bit over the different folds. This is due to our patch-wise formation of the validation set, meaning that the labels in most patches will be similar. In subsequent sections, we analyze whether our model makes errors on certain labels systematically. 
+More insights can be gleaned from Figures \ref{fig:fold_results_1} and \ref{fig:fold_results_2}, which plot the individual fold errors. Things to note here are that the errors fluctuate a fair bit over the different folds. This is due to our patch-wise formation of the validation set, meaning that the labels in most patches will be similar. In subsequent sections, we systematically analyze whether our model makes errors on certain labels. 
 
 % Results 1 table
 \begin{table}
@@ -224,14 +224,14 @@ We base our choice of the model on performance on testing scheme 1. This is beca
 \subsection{Analysis of Adaboost}
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.52\textwidth]{statics/ada_iterations.png}
+    \includegraphics[width=0.52\textwidth]{statics/ada_iterations_tr_23_te_1.png}
     \caption{Percentage error across subsequent iterations of Adaboost. Left: Error on Train Set, Right: Error on Test Set.}
     \label{fig:Adaboost_iterations}
 \end{figure}
 
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.5\textwidth]{statics/Feature_importance_test_scheme1.png}
+    \includegraphics[width=0.5\textwidth]{statics/Feature_importance_test_scheme1_tr_23_te_1.png}
     \caption{Feature Importance of Adaboost for 1) model trained on full train and validation set. 2) Each CV fold 3) Average across CV folds.}
     \label{fig:Feature_importance ts1}
 \end{figure}
@@ -247,20 +247,20 @@ Next, we assess the stability of the Adaboost model via its learned feature impo
 \subsection{Analysing Error Patterns}
 \begin{figure}
     \centering
-    \subfloat[\centering Test - Image 1]{{\includegraphics[width=0.48\textwidth]{ada_test_prob.png} }}
+    \subfloat[\centering Test - Image 1]{{\includegraphics[width=0.48\textwidth]{ada_test_prob_tr_23_te_1.png} }}
     \qquad
-    \subfloat[\centering Train - Image 2]{{\includegraphics[width=0.48\textwidth]{ada_train_prob1.png} }}
+    \subfloat[\centering Train - Image 2]{{\includegraphics[width=0.48\textwidth]{ada_train_prob1_tr_23_te_1.png} }}
     \qquad
-    \subfloat[\centering Train - Image 3]{{\includegraphics[width=0.48\textwidth]{ada_train_prob2.png} }}
+    \subfloat[\centering Train - Image 3]{{\includegraphics[width=0.48\textwidth]{ada_train_prob2_tr_23_te_1.png} }}
     \caption{Left Column: Pixels colored by expert labels, Red: Clouds, Blue: No Clouds, White: Unlabelled. Right Column: Predicted probability given by the model.}
     \label{fig:Probability_Preds}
 \end{figure}
 
 \begin{figure}
     \centering
-    \subfloat[\centering Low Dimension Representation of Adaboost Decision Surface]{{\includegraphics[width=0.48\textwidth]{statics/PCA_decision_surface.png} }}
+    \subfloat[\centering Low Dimension Representation of Adaboost Decision Surface]{{\includegraphics[width=0.48\textwidth]{statics/PCA_decision_surface_tr_23_te_1.png} }}
     \qquad
-    \subfloat[\centering Low Dimension Representation of Logistic Regression Decision Surface]{{\includegraphics[width=0.48\textwidth]{statics/log_reg_decision_surface.png} }}
+    \subfloat[\centering Low Dimension Representation of Logistic Regression Decision Surface]{{\includegraphics[width=0.48\textwidth]{statics/log_reg_decision_surface_tr_23_te_1.png} }}
     \caption{Decision Surfaces of Adaboost (Top) and Logistic Regression (Bottom). }
     \label{fig:decision_surface}
 \end{figure}
