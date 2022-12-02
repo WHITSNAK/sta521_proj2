@@ -24,8 +24,8 @@ from plot import *
 sns.set_style('whitegrid')
 np.random.seed(521)
 
-# python run_model_analysis.py --train_set [2,3] --test_set [1] --fp 'tr_23_te_1'
-# python run_model_analysis.py --train_set [1,2] --test_set [3] --fp 'tr_12_te_3'
+# python run_model_analysis.py --train_set 2,3 --test_set 1 --fp 'tr_23_te_1'
+# python run_model_analysis.py --train_set 1,2 --test_set 3 --fp 'tr_12_te_3'
 
 
 parser = argparse.ArgumentParser()
@@ -206,7 +206,7 @@ image_set['label_remaped'] = image_set['label'].apply(lambda x: remap_labels[x])
 
 
 # Train Preds
-train_im = image_set[image_set['Image_no']!=1]
+train_im = image_set[image_set['Image_no'].isin(train_set_image_ids)]
 train_im_features = train_im[features]
 prob_preds = adaboost_analysis.predict_proba(train_im_features)[:,1]
 train_im['Predicted_Probs'] = prob_preds
@@ -214,7 +214,7 @@ train_im['Predicted_Probs'] = prob_preds
 
 # Test Preds
 test_im = image_set[image_set['Image_no'].isin(test_set_image_ids)]
-test_im_features = image_set[image_set['Image_no']==1][features]
+test_im_features = image_set[image_set['Image_no'].isin(test_set_image_ids)][features]
 prob_preds = adaboost_analysis.predict_proba(test_im_features)[:,1]
 test_im['Predicted_Probs'] = prob_preds
 
