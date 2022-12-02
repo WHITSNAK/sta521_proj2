@@ -16,7 +16,7 @@ from sklearn.metrics import roc_curve, auc
 from sklearn.decomposition import PCA, KernelPCA
 from sklearn.manifold import TSNE
 from matplotlib import cm, colors
-
+import argparse
 
 from evalaute import *
 from plot import *
@@ -24,8 +24,28 @@ from plot import *
 sns.set_style('whitegrid')
 np.random.seed(521)
 
+# python run_model_analysis.py --train_set [2,3] --test_set [1] --fp 'tr_23_te_1'
+# python run_model_analysis.py --train_set [1,2] --test_set [3] --fp 'tr_12_te_3'
 
 
+parser = argparse.ArgumentParser()
+
+parser.add_argument('-i', '--train_set', required=True, 
+    help="train set image no",type=str)
+parser.add_argument('-j', '--test_set', required=True, 
+    help="Test set image", type=str)
+parser.add_argument('-k', '--fp', required=True, 
+    help="Filepath_name")
+
+
+args = parser.parse_args()
+
+train_set_image_ids = [int(item) for item in args.train_set.split(',')]
+test_set_image_ids = [int(item) for item in args.test_set.split(',')]
+images_fp = args.fp
+
+
+#### Run everything again for feature importances ####
 # Import Full Data
 
 COLUMNES = ['y', 'x', 'label', 'ndai', 'sd', 'corr', 'ra_df', 'ra_cf', 'ra_bf', 'ra_af', 'ra_an']
@@ -61,11 +81,11 @@ image_test1 = SatelliteImageData(kernel, images=['imagem1.txt', 'imagem2.txt'])
 COLUMNES = ['y', 'x', 'label', 'ndai', 'sd', 'corr', 'ra_df', 'ra_cf', 'ra_bf', 'ra_af', 'ra_an']
 train_columns = ['ndai', 'sd', 'corr', 'ra_df', 'ra_cf', 'ra_bf', 'ra_af', 'ra_an']
 
-X_train_1 = image_set[image_set['Image_no'].isin([2,3])][train_columns]
-y_train_1 = image_set[image_set['Image_no'].isin([2,3])][['label']]
+X_train_1 = image_set[image_set['Image_no'].isin(train_set_image_ids)][train_columns]
+y_train_1 = image_set[image_set['Image_no'].isin(train_set_image_ids)][['label']]
 
-X_test_1 = image_set[image_set['Image_no'].isin([1])][train_columns]
-y_test_1 = image_set[image_set['Image_no'].isin([1])][['label']]
+X_test_1 = image_set[image_set['Image_no'].isin(test_set_image_ids)][train_columns]
+y_test_1 = image_set[image_set['Image_no'].isin(test_set_image_ids)][['label']]
 
 
 #### Test scheme 2 (Nested CV + Testing)####
@@ -97,299 +117,7 @@ for mod_name, model in model_dict.items():
     result_store[mod_name] = [scheme1_results, scheme2_results]
     
 
-
-# ### Scheme 1 Results
-model_namelist = ['LR','RF','CART','Adaboost','Baseline']
-
-
-
-scheme1_results = pd.DataFrame.from_dict({'Test Acc': [result_store[x][0]['Test_acc'] for x in model_namelist],
-                       'Test Balanced Acc': [result_store[x][0]['Test_bal_acc'] for x in model_namelist],
-                       'CV Acc': [result_store[x][0]['CV_acc'] for x in model_namelist],
-                       'CV Balanced ACC':[result_store[x][0]['CV_bal_acc'] for x in model_namelist]})
-scheme1_results.index = model_namelist
-scheme1_results.to_csv('statics/scheme1_results.csv')
-
-
-# Indiv Fold Accuracy
-model_namelist_for_plot = ['LR', 'RF', 'CART', 'Adaboost']
-
-# Plot Fold Errors for Test Scheme 1
-coords = [(0,0),(0,1),(1,0),(1,1)]
-fig,ax = plt.subplots(2,2,figsize=(10,10))
-
-for co,mod in zip(coords,model_namelist_for_plot):
-    
-    fold_ids = list(range(len(result_store[mod][0]['scheme_1_raw'])))
-
-    acc_scores = [result_store[mod][0]['scheme_1_raw'][f][0][0]                  for f in fold_ids]
-
-    bal_acc_scores = [result_store[mod][0]['scheme_1_raw'][f][0][1]                  for f in fold_ids]
-
-    ax[co[0],co[1]].plot(fold_ids, acc_scores, marker='*', color='blue', label='Accuracy Across Folds')
-    ax[co[0],co[1]].plot(fold_ids, bal_acc_scores, marker='*',color='green', label='Balanced Accuracy Across Folds')
-    ax[co[0],co[1]].legend()
-    ax[co[0],co[1]].title.set_text(f'Scheme 1 CV Per Fold Error Rate: {mod}')
-
-plt.savefig('statics/test_Scheme_1_Fold_error.png')
-
-
-# ### Scheme 2 Results
-scheme2_results = pd.DataFrame.from_dict({'Test Acc': [result_store[x][1]['Test_acc'] for x in model_namelist],
-                       'Test Balanced Acc': [result_store[x][1]['Test_bal_acc'] for x in model_namelist],
-                       'CV Acc': [result_store[x][1]['CV_acc'] for x in model_namelist],
-                       'CV Balanced ACC':[result_store[x][1]['CV_bal_acc'] for x in model_namelist]})
-scheme2_results.index = model_namelist
-scheme2_results.to_csv('statics/scheme2_results.csv')
-
-
-
-# Plot Fold Errors Test Scheme 2
-coords = [(0,0),(0,1),(1,0),(1,1)]
-fig,ax = plt.subplots(2,2,figsize=(10,10))
-
-for co,mod in zip(coords,model_namelist_for_plot):
-    
-    fold_ids = list(range(len(result_store[mod][1]['scheme_2_raw'])))
-
-    acc_scores = [result_store[mod][1]['scheme_2_raw'][f][0][0]                  for f in fold_ids]
-
-    bal_acc_scores = [result_store[mod][1]['scheme_2_raw'][f][0][1]                  for f in fold_ids]
-
-    ax[co[0],co[1]].plot(fold_ids, acc_scores, marker='*', color='blue', label='Accuracy Across Folds')
-    ax[co[0],co[1]].plot(fold_ids, bal_acc_scores, marker='*',color='green', label='Balanced Accuracy Across Folds')
-    ax[co[0],co[1]].legend()
-    ax[co[0],co[1]].title.set_text(f'Scheme 2 CV Per Fold Error Rate: {mod}')
-
-plt.savefig('statics/test_Scheme2_fold_error.png')
-
-
-## Plot ROC Curves
-
-# Test Scheme 1
-chosen_fpr = 0.3
-import warnings
-warnings.filterwarnings("ignore")
-
-
-fig,ax = plt.subplots(figsize=(7,7))
-
-plot_CV_ROC(result_store['LR'][0]['scheme_1_raw'],
-            'bisque',
-            'darkorange',
-            'LR',
-            ax=ax,
-            chosen_fpr=chosen_fpr)
-
-plot_CV_ROC(result_store['RF'][0]['scheme_1_raw'],
-            'mistyrose',
-            'red',
-            'RF',
-            ax=ax,
-            chosen_fpr=chosen_fpr)
-
-
-plot_CV_ROC(result_store['CART'][0]['scheme_1_raw'],
-            'honeydew',
-            'green',
-            'CART',
-            ax=ax,
-            chosen_fpr=chosen_fpr)
-
-
-plot_CV_ROC(result_store['Adaboost'][0]['scheme_1_raw'],
-            'lavender',
-            'mediumblue',
-            'Ada',
-            ax=ax,
-            chosen_fpr=chosen_fpr)
-
-ax.legend()
-ax.title.set_text('Test Scheme 1: Cross Validated Folds and Mean ROC')
-plt.savefig('statics/test_Scheme1_cv_roc.png')
-
-
-# Test ROC Scheme 1
-test_scores = [result_store[mod_name][0]['test_scores'] for mod_name in model_namelist]
-
-fpr_tpr_col = []
-roc_col = []
-
-for ts in test_scores:
-
-    fpr, tpr, _ = roc_curve(y_test_1.values,ts[:,1])
-    roc_auc = auc(fpr, tpr)
-    
-    fpr_tpr_col.append((fpr, tpr))
-    roc_col.append(roc_auc)
-    
-model_names = ['LR', 'RF','CART', 'Ada']
-model_colors = ['darkorange','red','green','mediumblue']
-
-
-fig, ax = plt.subplots(figsize=(7,7))
-
-lw = 2
-
-mean_fpr = np.linspace(0, 1, 100)
-# Add in the chosen FPR level
-mean_fpr = np.insert(mean_fpr, find_change_point(mean_fpr < chosen_fpr), chosen_fpr)
-
-for fpr_tpr, roc, mod_name, mod_col in zip(fpr_tpr_col,
-                                           roc_col,
-                                           model_names,
-                                           model_colors):
-    
-    interp_tpr = np.interp(mean_fpr, fpr_tpr[0], fpr_tpr[1])
-    # Find associated mean tpr value
-    tpr_index = np.where(mean_fpr == chosen_fpr)[0][0]
-    tpr_val_chosen = interp_tpr[tpr_index]
-    
-    ax.plot(
-        mean_fpr,
-        interp_tpr,
-        color=mod_col,
-        lw=lw,
-        label="ROC curve %s (area = %0.2f) (TPR = %0.2f)" % (mod_name,roc,tpr_val_chosen),
-    )
-    
-    # Plot tpr val
-    ax.plot([chosen_fpr,chosen_fpr],
-            [0,tpr_val_chosen], alpha=0.5, color='black', ls='-')
-
-    ax.plot([0,chosen_fpr],
-            [tpr_val_chosen,tpr_val_chosen], alpha=0.5, color=mod_col, ls='--')
-    
-    
-ax.plot([0, 1], [0, 1], color="black", lw=lw, linestyle="--")
-ax.set_xlim([0.0, 1.0])
-ax.set_ylim([0.0, 1.05])
-ax.set_xlabel("False Positive Rate")
-ax.set_ylabel("True Positive Rate")
-ax.title.set_text("Test Scheme 1: Test Set ROC")
-ax.legend(loc="lower right")
-plt.savefig('statics/test_Scheme1_test_roc.png')
-
-
-# ## ROC Test Scheme 2
-fig,ax = plt.subplots(figsize=(7,7))
-
-plot_CV_ROC(result_store['LR'][1]['scheme_2_raw'],
-            'bisque',
-            'darkorange',
-            'LR',
-            ax=ax,
-            chosen_fpr=chosen_fpr,
-            nested_test=False)
-
-plot_CV_ROC(result_store['RF'][1]['scheme_2_raw'],
-            'mistyrose',
-            'red',
-            'RF',
-            ax=ax,
-            chosen_fpr=chosen_fpr,
-            nested_test=False)
-
-
-plot_CV_ROC(result_store['CART'][1]['scheme_2_raw'],
-            'honeydew',
-            'green',
-            'CART',
-            ax=ax,
-            chosen_fpr=chosen_fpr,
-            nested_test=False)
-
-
-plot_CV_ROC(result_store['Adaboost'][1]['scheme_2_raw'],
-            'lavender',
-            'mediumblue',
-            'Ada',
-            ax=ax,
-            chosen_fpr=chosen_fpr,
-            nested_test=False)
-
-ax.legend()
-ax.title.set_text('Test Scheme 2: Cross Validated Folds and Mean ROC')
-plt.savefig('statics/test_Scheme2_cv_roc.png')
-
-
-fig,ax = plt.subplots(figsize=(7,7))
-
-plot_CV_ROC(result_store['LR'][1]['scheme_2_raw'],
-            'bisque',
-            'darkorange',
-            'LR',
-            ax=ax,
-            chosen_fpr=chosen_fpr,
-            nested_test=True)
-
-plot_CV_ROC(result_store['RF'][1]['scheme_2_raw'],
-            'mistyrose',
-            'red',
-            'RF',
-            ax=ax,
-            chosen_fpr=chosen_fpr,
-            nested_test=True)
-
-
-plot_CV_ROC(result_store['CART'][1]['scheme_2_raw'],
-            'honeydew',
-            'green',
-            'CART',
-            ax=ax,
-            chosen_fpr=chosen_fpr,
-            nested_test=True)
-
-
-plot_CV_ROC(result_store['Adaboost'][1]['scheme_2_raw'],
-            'lavender',
-            'mediumblue',
-            'Ada',
-            ax=ax,
-            chosen_fpr=chosen_fpr,
-            nested_test=True)
-
-ax.legend()
-ax.title.set_text('Test Scheme 2: Test Set ROC')
-plt.savefig('statics/test_Scheme2_test_roc.png')
-
-
-'''
-
-# # Model Analysis
-COLUMNES = ['y', 'x', 'label', 'ndai', 'sd', 'corr', 'ra_df', 'ra_cf', 'ra_bf', 'ra_af', 'ra_an']
-train_columns = ['ndai', 'sd', 'corr', 'ra_df', 'ra_cf', 'ra_bf', 'ra_af', 'ra_an']
-
-imagem1 = pd.read_csv('cv_master/data/imagem1.txt',delim_whitespace=True, header=None)
-imagem2 = pd.read_csv('cv_master/data/imagem2.txt',delim_whitespace=True, header=None)
-imagem3 = pd.read_csv('cv_master/data/imagem3.txt',delim_whitespace=True, header=None)
-
-imagem1.columns = COLUMNES
-imagem2.columns = COLUMNES
-imagem3.columns = COLUMNES
-
-imagem1['Image_no'] = 1
-imagem2['Image_no'] = 2
-imagem3['Image_no'] = 3
-
-image_set = pd.concat([imagem1, imagem2, imagem3],0)
-remap_labels = {1:1,
-                -1:0,
-                0:2}
-
-
-image_set['label_remaped'] = image_set['label'].apply(lambda x: remap_labels[x])
-image_set = image_set[image_set['label_remaped']!=2]
-
-
-# Analyse Error vs Number of Trees (Can it further decrease)
-
-X_train_1 = image_set[image_set['Image_no'].isin([2,3])][train_columns]
-y_train_1 = image_set[image_set['Image_no'].isin([2,3])][['label_remaped']]
-
-X_test_1 = image_set[image_set['Image_no'].isin([1])][train_columns]
-y_test_1 = image_set[image_set['Image_no'].isin([1])][['label_remaped']]
-
+# Model analysis
 
 features = ['ndai', 'sd', 'corr', 'ra_df', 'ra_cf', 'ra_bf', 'ra_af', 'ra_an']
 
@@ -445,7 +173,7 @@ ax[1].set_xlabel('Number Weak Learners')
 
 ax[0].set_ylabel('Train Error Rate')
 ax[1].set_ylabel('Test Error Rate')
-plt.savefig('statics/ada_iterations.png')
+plt.savefig(f'statics/ada_iterations_{images_fp}.png')
 
 
 # ## Generic Decision Surface Analysis
@@ -485,7 +213,7 @@ train_im['Predicted_Probs'] = prob_preds
 
 
 # Test Preds
-test_im = image_set[image_set['Image_no']==1]
+test_im = image_set[image_set['Image_no'].isin(test_set_image_ids)]
 test_im_features = image_set[image_set['Image_no']==1][features]
 prob_preds = adaboost_analysis.predict_proba(test_im_features)[:,1]
 test_im['Predicted_Probs'] = prob_preds
@@ -512,13 +240,11 @@ image.reset_index(inplace=True)
 cmap = sns.color_palette("vlag", as_cmap=True)
 plot_heatmap(get_heatmap_data(image, 'label'), label='Test Image', cmap=cmap, ax=ax[0])
 plot_heatmap(get_heatmap_data(image, 'Predicted_Probs'), label='Test Image Predicted Probs', cmap=cmap, ax=ax[1])
-plt.savefig('statics/ada_test_prob.png')
+plt.savefig(f'statics/ada_test_prob_{images_fp}.png')
 
 
-# In[78]:
 
-
-image = train_im[train_im['Image_no']==2].copy()
+image = train_im[train_im['Image_no']==train_set_image_ids[0]].copy()
 
 fig, ax = plt.subplots(1,2,figsize=(5*2, 4))
 
@@ -538,13 +264,10 @@ image.reset_index(inplace=True)
 cmap = sns.color_palette("vlag", as_cmap=True)
 plot_heatmap(get_heatmap_data(image, 'label'), label='Train Image', cmap=cmap, ax=ax[0])
 plot_heatmap(get_heatmap_data(image, 'Predicted_Probs'), label='Train Image Predicted Probs', cmap=cmap, ax=ax[1])
-plt.savefig('statics/ada_train_prob1.png')
+plt.savefig(f'statics/ada_train_prob1_{images_fp}.png')
 
 
-# In[79]:
-
-
-image = train_im[train_im['Image_no']==3].copy()
+image = train_im[train_im['Image_no']==train_set_image_ids[1]].copy()
 
 fig, ax = plt.subplots(1,2,figsize=(5*2, 4))
 
@@ -564,7 +287,7 @@ image.reset_index(inplace=True)
 cmap = sns.color_palette("vlag", as_cmap=True)
 plot_heatmap(get_heatmap_data(image, 'label'), label='Train Image', cmap=cmap, ax=ax[0])
 plot_heatmap(get_heatmap_data(image, 'Predicted_Probs'), label='Train Image Predicted Probs', cmap=cmap, ax=ax[1])
-plt.savefig('statics/ada_train_prob2.png')
+plt.savefig(f'statics/ada_train_prob2_{images_fp}.png')
 
 
 # # Feature Values
@@ -596,8 +319,6 @@ out = pca.transform(projected_points[features])
 
 #inverse_transform
 
-
-# In[84]:
 
 
 plt.scatter(out[:,0],
@@ -633,12 +354,6 @@ cmap_labels = {0: 'powderblue',
 
 #low_dim_cands_colors =  pd.Series(low_dim_cands_labels).apply(lambda x: cmap_labels[x])
 
-"""
-ax.scatter(low_dim_cands[:,0],
-            low_dim_cands[:,1],
-            color=low_dim_cands_colors,
-            alpha=0.1)
-"""
 im_plot = ax.scatter(low_dim_cands[:,0],
             low_dim_cands[:,1],
             color=cmap(low_dim_cands_labels[:,1]),
@@ -657,12 +372,8 @@ ax.set_xlim([x_min, x_max])
 from matplotlib import cm, colors
 
 fig.colorbar(cm.ScalarMappable(norm=None, cmap=cmap), ax=ax)
-plt.savefig('statics/log_reg_decision_surface.png')
+plt.savefig(f'statics/log_reg_decision_surface_{images_fp}.png')
 
-
-
-
-# In[98]:
 
 
 x_min = -120
@@ -712,7 +423,7 @@ ax.set_xlim([x_min, x_max])
 
 fig.colorbar(cm.ScalarMappable(norm=None, cmap=cmap), ax=ax)
 
-plt.savefig('statics/PCA_decision_surface.png')
+plt.savefig(f'statics/PCA_decision_surface_{images_fp}.png')
 
 
 
@@ -758,7 +469,7 @@ ax.set_xticklabels([""]+features)
 ax.set_xlabel("Feature Name")
 ax.set_ylabel("CV Feature Importance")
 ax.legend()
-plt.savefig('statics/Feature_importance_test_scheme1.png')
+plt.savefig(f'statics/Feature_importance_test_scheme1_{images_fp}.png')
 
 
 ### Histogram analysis ###
@@ -799,7 +510,7 @@ sns.histplot(subsampled_true_neg, x="sd", hue="Misclassified", ax=ax[1],stat='pr
 sns.histplot(subsampled_true_neg, x="corr", hue="Misclassified", ax=ax[2],stat='probability')
 
 plt.tight_layout()
-plt.savefig('statics/feature_compare_true_neg.png')
+plt.savefig(f'statics/feature_compare_true_neg_{images_fp}.png')
 
 
 fig,ax = plt.subplots(1,3,figsize=(30,10))
@@ -813,5 +524,5 @@ sns.histplot(subsampled_true_pos, x="sd", hue="Misclassified", ax=ax[1],stat='pr
 sns.histplot(subsampled_true_pos, x="corr", hue="Misclassified", ax=ax[2],stat='probability')
 
 plt.tight_layout()
-plt.savefig('statics/feature_compare_true_pos.png')
-'''
+plt.savefig(f'statics/feature_compare_true_pos_{images_fp}.png')
+
