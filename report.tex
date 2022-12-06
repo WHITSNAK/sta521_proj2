@@ -202,18 +202,18 @@ More insights can be gleaned from Figures \ref{fig:fold_results_1} and \ref{fig:
 \subsection{ROC Plots}
 \begin{figure}
     \centering
-    \subfloat[\centering Test Scheme 1: CV ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme1_cv_roc.png} }}
+    \subfloat[\centering Test Scheme 1: CV ROC]{{\includegraphics[width=0.375\textwidth]{statics/test_Scheme1_cv_roc.png} }}
     \qquad
-    \subfloat[\centering Test Schema 1: Test ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme1_test_roc.png} }}
+    \subfloat[\centering Test Schema 1: Test ROC]{{\includegraphics[width=0.375\textwidth]{statics/test_Scheme1_test_roc.png} }}
     \caption{Left: ROC curves per fold and Mean ROC curve for the 4 models. Right: ROC curves of the single held-out test set for the 4 models.}
     \label{fig:ROC_curves scheme1}
 \end{figure}
 
 \begin{figure}
     \centering
-    \subfloat[\centering Test Scheme 2: CV ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme2_cv_roc.png} }}
+    \subfloat[\centering Test Scheme 2: CV ROC]{{\includegraphics[width=0.375\textwidth]{statics/test_Scheme2_cv_roc.png} }}
     \qquad
-    \subfloat[\centering Test Schema 2: Nested Test ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme2_test_roc.png} }}
+    \subfloat[\centering Test Schema 2: Nested Test ROC]{{\includegraphics[width=0.375\textwidth]{statics/test_Scheme2_test_roc.png} }}
     \caption{Left: ROC curves per fold and Mean ROC curve for the 4 models. Right: ROC curves of each test fold and Mean ROC curves across all test folds for the 4 models.}
     \label{fig:ROC_curves scheme2}
 \end{figure}
@@ -228,12 +228,12 @@ Next, we fix the False Positive Rate (FPR) and compute the True Positive Rate (T
 
 
 \section{Diagnostics}
-We base our choice of the model on performance on testing scheme 1. This is because testing scheme 1 better reflects the actual use case of the model, where inference will be made on whole images. Hence we choose the Adaboost model which has the best validation and test performance in test scheme 1.
+We base our choice of the model on performance on testing scheme 1. This is because testing scheme 1 better reflects the actual use case of the model, where inference will be made on a set of whole new images. Hence we choose the Adaboost model, which has the best validation and test performance in test scheme 1.
 
 \subsection{Analysis of Adaboost}
 \begin{figure}[h]
     \centering
-    \includegraphics[width=0.52\textwidth]{statics/ada_iterations_tr_23_te_1.png}
+    \includegraphics[width=0.5\textwidth]{statics/ada_iterations_tr_23_te_1.png}
     \caption{Percentage error across subsequent iterations of Adaboost. Left: Error on Train Set, Right: Error on Test Set.}
     \label{fig:Adaboost_iterations}
 \end{figure}
