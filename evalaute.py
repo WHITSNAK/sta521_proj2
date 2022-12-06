@@ -1,7 +1,6 @@
-from cv_master import Grid2DKernel, SatelliteImageData
-from cv_master.cv import cv_classifer, nested_cv_classifer
-from sklearn.metrics import accuracy_score, f1_score, precision_score, recall_score, balanced_accuracy_score
 import numpy as np
+from cv_master.cv import cv_classifer, nested_cv_classifer
+from sklearn.metrics import accuracy_score, balanced_accuracy_score
 
 def eval_model_test_scheme1(model, dataset1, metric_list):
     """
@@ -43,8 +42,6 @@ def eval_model_test_scheme1(model, dataset1, metric_list):
     
     return test_scheme_1_info
     
-
-
 def eval_model_test_scheme2(model, dataset2, metric_list):
     """
     model: Callable

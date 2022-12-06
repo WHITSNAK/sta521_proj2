@@ -1,6 +1,5 @@
 import seaborn as sns
 import numpy as np
-import matplotlib.pyplot as plt
 from sklearn.metrics import roc_curve, auc
 
 def wrap_index(i, ncol):
@@ -9,8 +8,8 @@ def wrap_index(i, ncol):
 def get_heatmap_data(df, col):
     return df[['y', 'x', col]].set_index(['y', 'x']).unstack()
 
-def plot_heatmap(data, label, cmap, ax):
-    sns.heatmap(data, cmap=cmap, ax=ax)
+def plot_heatmap(data, label, cmap, ax, **kws):
+    sns.heatmap(data, cmap=cmap, ax=ax, **kws)
     ax.tick_params(
         left = False, right = False , labelleft = False ,
         labelbottom = False, bottom = False
@@ -19,8 +18,6 @@ def plot_heatmap(data, label, cmap, ax):
     ax.set_ylabel('y')
     ax.set_title(label)
 
-
-
 def find_change_point(arr):
     """
     arr: boolean array
@@ -28,7 +25,6 @@ def find_change_point(arr):
     for i in range(len(arr)-1):
         if arr[i] != arr[i+1]:
             return i
-
 
 def plot_CV_ROC(cv_scores, cv_curve_color, mean_curve_color, mod_name, ax, chosen_fpr=0.5, nested_test=False):
     lw=2
