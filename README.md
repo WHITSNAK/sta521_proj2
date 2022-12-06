@@ -12,7 +12,9 @@ You will need to install anaconda for this: https://docs.anaconda.com/anaconda/i
 conda env create -f sta_521_env.yml
 ```
 
-## Step 2
+## Step 2: Generate Plots Found From Section I to III
+```python
+```
 
 ## Step 3: Generate Plots Found From Section IV to VI
 ```python
