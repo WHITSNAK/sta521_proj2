@@ -127,7 +127,8 @@ For the next couple of sections, we compare 4 different classification methods, 
 
 
 \subsection{CV Results}
-We use patch sizes of 55x55. In total, this produces 44 folds for cross-validation for test scheme 1. And 40 folds for cross-validation/testing in test scheme 2. We consider two metrics, accuracy and balanced accuracy, for computing the CV errors and test errors for both test schemes. Aggregated validation and test results are provided in Tables \ref{tab:scheme1_results} and \ref{tab:scheme2_results} for test schemes 1 and 2, respectively. \textcolor{red}{Add commentary about model results}.
+\label{sec:cv_results}
+We use patch sizes of 55x55. In total, this produces 44 folds for cross-validation for test scheme 1. And 40 folds for cross-validation/testing in test scheme 2. We consider two metrics, accuracy and balanced accuracy, for computing the CV errors and test errors for both test schemes. Aggregated validation and test results are provided in Tables \ref{tab:scheme1_results} and \ref{tab:scheme2_results} for test schemes 1 and 2, respectively. In general all the machine learning models perform well, far exceeding the simple baseline model. For test scheme 1 we can see that Adaboost performs the best in both cross validation and in test set accuracy and balanced accuracy. This however is not the same in test scheme 2, where Random forest performs the best in both cross validation and in test set accuracy and balanced accuracy. Interestingly, we can also see that the simple logistic regression model, the only linear model out for the candidate models performs well in both test schemes, being the second best performing model in test scheme 1 and test scheme 2. This is likely due to the presence of the expert engineered features, which the \textcolor{red}{paper (cite)} has already shown to be highly predictive of cloud presence.
 
 These tables also show the difference between test scheme 1 and test scheme 2. We can see that the CV results and the test results are very similar in test scheme 2 (as seen from Table \ref{tab:scheme2_results}), whereas the test results in Table \ref{tab:scheme1_results} are generally worse than the CV results. This reflects the fact that test scheme 2 eventually uses the same data set; hence, we expect both to produce similar scores. In contrast with test scheme 1, the test procedure (testing on 1 image) is quite different from the validation procedure. We see that test scheme 1 allows us to detect the overfitting of some models even when high CV accuracy is shown. This is the case in the Random Forest model, which had the second-best performing CV accuracy, but the poorest test accuracy.
 
@@ -141,13 +142,15 @@ More insights can be gleaned from Figures \ref{fig:fold_results_1} and \ref{fig:
     \hline
     Model & CV Acc. & CV B.Acc. & Test Acc. & Test B.Acc. \\ [0.5ex] 
     \hline\hline
-    LR & 0.880 & 0.869 & 0.769 & 0.764 \\ 
+    Baseline & 0.616 & 0.523 & 0.522 & 0.522 \\ 
     \hline
-    RF& 0.881 & 0.876 & 0.494 & 0.645 \\
+    LR & 0.880 & 0.869 & 0.929 & 0.929 \\ 
     \hline
-    CART & 0.872 & 0.868 & 0.759 & 0.749 \\
+    RF& 0.879 & 0.879 & 0.911 & 0.912 \\
     \hline
-    Adaboost & 0.884 & 0.874 & 0.788 & 0.778 \\
+    CART & 0.872 & 0.868 & 0.856 & 0.858 \\
+    \hline
+    Adaboost & 0.884 & 0.874 & 0.934 & 0.938 \\
     \hline
 \end{tabular}
 }
@@ -161,16 +164,18 @@ More insights can be gleaned from Figures \ref{fig:fold_results_1} and \ref{fig:
 \begin{center}
 \resizebox{\columnwidth}{!}{
 \begin{tabular}{||c | c c c c||} 
-\hline
-Model & CV Acc. & CV B.Acc. & Test Acc. & Test B.Acc. \\ [0.5ex] 
-\hline\hline
-LR & 0.877 & 0.820 & 0.877 & 0.820 \\ 
-\hline
-RF& 0.878 & 0.819 & 0.877 & 0.814 \\
-\hline
-CART & 0.860 & 0.821 & 0.860 & 0.821 \\
-\hline
-Adaboost & 0.867 & 0.805 & 0.867 & 0.805 \\
+    \hline
+    Model & CV Acc. & CV B.Acc. & Test Acc. & Test B.Acc. \\ [0.5ex] 
+    \hline\hline
+    Baseline & 0.603 & 0.537 & 0.603 & 0.537 \\ 
+    \hline
+    LR & 0.877 & 0.820 & 0.877 & 0.820 \\ 
+    \hline
+    RF& 0.879 & 0.846 & 0.878 & 0.845 \\
+    \hline
+    CART & 0.860 & 0.822 & 0.860 & 0.822 \\
+    \hline
+    Adaboost & 0.867 & 0.805 & 0.867 & 0.805 \\
 \hline
 \end{tabular}
 }
@@ -195,9 +200,11 @@ Adaboost & 0.867 & 0.805 & 0.867 & 0.805 \\
 
 
 \subsection{ROC Plots}
-We plot the ROC curves generated for both the validation and test set(s) used in testing scheme 1 and testing scheme 2. These are displayed in \ref{fig:ROC_curves scheme1} and \ref{fig:ROC_curves scheme2}. An ROC curve highlights the predicted true positive rate a model can achieve for a given false positive rate (or vice versa). (Insert explanation about which do we care more about).
-\\ 
-Intuitively a model that has a more favourable trade off between the two is better performing, this can be measured by the area under curve metric. As can be seen the AUC between LR, RF and Adaboost is similar across both testing schemes and across both the validation and testing sets. One surprising exception to this is the random forest model, which sees a sharp drop in AUC in testing scheme 1 on the test set. This is likely indicative of overfitting in the RF model in test scheme 1. The CART model seems to perform the worse, as highlighted by its consistently lower AUC across both validation / testing sets.
+We plot the ROC curves generated for both the validation and test set(s) used in testing scheme 1 and testing scheme 2. These are displayed in \ref{fig:ROC_curves scheme1} and \ref{fig:ROC_curves scheme2}. For cross validation ROC and test scheme 2 ROC, we plot the mean ROC curves over ROC curves generated by each fold. An ROC curve highlights the predicted true positive rate a model can achieve for a given false positive rate (or vice versa). With the cloud class as the 'true' class, a high true positive rate implies that a pixel that is actually a cloud will high a high chance of being classified as a cloud. This conflicts with the objective of a low false positive rate which measures how often non cloud pixels are predicted as clouds. 
+\\  
+Intuitively a model that has a more favourable trade off between the two is better performing, this can be measured by the area under curve metric. As before we see that for test scheme 2, the AUC from all 4 models between CV and test is very similar, this is due to the same reasons highlighted earlier about the similarity between the CV scheme and the testing scheme in test scheme 2. Under test scheme 2, Random forest has the most favourable trade off, with the best AUC. LR and Adaboost perform similarly, and CART has a noticeably lowered AUC as compared to the other 3 models. These results parallel what was observered in the metric based evaluation in section \ref{sec:cv_results}. Under test scheme 1, we see a noticeable difference in AUC under cross validation and under the test set, with the test set AUCs being higher for all models except CART. We see that under test scheme 1, Adaboost has the most favourable test AUC, which once again parallels the observations in section \ref{sec:cv_results}.
+\\
+Another analysis is to fix a model threshold and observe the induce TPR rate and FPR rate. However to make this more operational, we instead fix a chosen FPR rate, and compute the TPR rate based on the induced threshold needed to obtain that FPR rate, intuitively this allows an end user to fix an acceptable level of false positive rate. We demonstrate an example where the false positive rate is low, set at 0.3. We see that for this, most models are able to attain a TPR above 0.8 under both test schemes. 
 
 \begin{figure}%
     \centering
@@ -276,21 +283,19 @@ Next, we analyze the decision surface of Adaboost. This is a similar analysis to
 \subsubsection{Feature Value Distribution}
 Next we analyse differences in feature value distribution between correctly vs wrongly classified points for both true negatives and true positive cases. We plot the feature distribution of the three expert derived features, NDAI, Corr and SD, which are also the features of highest feature importance as seen in Figure \ref{fig:Feature_importance ts1}. For these plots we separate points that are clouds vs those that are not clouds, and also separate them by whether they are correctly classified or wrongly classified. The resulting plots for the non-cloud points and cloud points are in Figures \ref{fig:feature_compare_noncloud} and \ref{fig:feature_compare_cloud} respectively. 
 
-\begin{figure*}[h]
-\centering
-% \captionsetup{justification=centering}
-\includegraphics[width=1.0\textwidth]{statics/feature_compare_true_neg_tr_23_te_1.png}
-\caption{Histograms of NDAI, Corr and SD, between mis-classified and correctly classified non-cloud data points. Blue histograms represent the distribution of features of points that are correctly classified and orange those that are mis-classified}
-\label{fig:feature_compare_noncloud}
-\end{figure*}
 
-\begin{figure*}[h]
-\centering
-% \captionsetup{justification=centering}
-\includegraphics[width=1.0\textwidth]{statics/feature_compare_true_pos_tr_23_te_1.png}
-\caption{Histograms of NDAI, Corr and SD, between mis-classified and correctly classified cloud data points. Blue histograms represent the distribution of features of points that are correctly classified and orange those that are mis-classified}
-\label{fig:feature_compare_cloud}
-\end{figure*}
+
+\begin{figure}[!h]
+    \centering
+    \subfloat[\centering Histograms of NDAI, Corr and SD, between mis-classified and correctly classified non-cloud data points. Blue histograms represent the distribution of features of points that are correctly classified and orange those that are mis-classified]{{\includegraphics[width=0.48\textwidth]{statics/feature_compare_true_neg_tr_23_te_1.png} }}
+    \qquad
+    \subfloat[\centering Train - Image 2]{{\includegraphics[width=0.48\textwidth]{feature_compare_true_pos_tr_23_te_1.png} }}
+    \caption{Histograms of NDAI, Corr and SD, between mis-classified and correctly classified cloud data points. Blue histograms represent the distribution of features of points that are correctly classified and orange those that are mis-classified}
+    \caption{Decision Surfaces of Adaboost (Top) and Logistic Regression (Bottom). }
+    \label{fig:decision_surface_alt}
+\end{figure}
+
+
 \\
 \\
 Across both the cloud and non cloud data points, we see that there is a significant difference in distribution of NDAI values between the correctly classified and the mis-classified data points. This is likely to be a significant explainer of the model's error since NDAI is also the feature that is the most important in the adaboost model. For example in the non-cloud case in Figure \ref{fig:feature_compare_noncloud}, we see that the mean of the distribution of NDAI for the mis-classified points is significantly higher than that of the non-misclassified points. Contrast this with the histograms of corr in \ref{fig:feature_compare_cloud}, where the distributions of the non mis-classified points and the mis-classified points are indistinguisahble if not for the labels. In this case we can see that the model's heavy reliance on the NDAI feature might be one of the key drivers of error in the model.
@@ -299,6 +304,47 @@ Across both the cloud and non cloud data points, we see that there is a signific
 There are two key issues with our model. Firstly, our model ignores spatial dependencies between pixels; secondly, it is a supervised learning model that requires expert labels to train. Several models can explicitly account for spatial dependencies in images. One example would be the convolutional neural network, which we could train to produce pixel-wise outputs of the cloud prediction based on the input features (stacked as an image). Another option that doesn't require expert labeling is the Ising / Potts model, which explicitly encodes the spatial dependencies via an undirected graph. These two models should perform better than our selected classifiers by directly modeling the innate spatial dependencies of the image data.
 
 \subsection{Stability Of Results with Alternative Splits}
+To check the robustness of our conclusions about Adaboost in the earlier sections, we vary the images used for training and that for testing. This time, we use images 1 and 2 for training and 3 for testing. This is a significant change due to the larger number of cloud labelled data points in image 1. 
+\subsubsection{Decision Surfaces}
+Figure \ref{fig:decision_surface_alt} shows the learnt decision surface with new training points overlaid with points from the test set. Once again we see that unlike logistic regression Adaboost does not over fit on predicted probabilities, which can be seen by adaboost learning a less confident decision surface, especially near boundaries and in areas with low data. 
+\subsubsection{Predicted Probabilities}
+We see a similar trend in predicted probabilities as before, the new set of predicted probabilities are shown in Figure \ref{fig:Probability_Preds_alt}. Once again we see that the model tends to mis-classify isolated patches, prefering to learn patches which are spatially homogenous, that is neighbouring pixels tend to have the same prediction.
+\subsubsection{Feature Values}
+Once again we see that the main driver of misclassification is with the differing distribution of NDAI. In-fact with the larger number of true positive (cloud) points in the training set, the differences in NDAI are even more apparent. 
+
+\begin{figure}
+    \centering
+    \subfloat[\centering Test - Image 3]{{\includegraphics[width=0.48\textwidth]{ada_test_prob_tr_12_te_3.png} }}
+    \qquad
+    \subfloat[\centering Train - Image 1]{{\includegraphics[width=0.48\textwidth]{ada_train_prob1_tr_12_te_3.png} }}
+    \qquad
+    \subfloat[\centering Train - Image 2]{{\includegraphics[width=0.48\textwidth]{ada_train_prob2_tr_12_te_3.png} }}
+    \caption{Left Column: Pixels colored by expert labels, Red: Clouds, Blue: No Clouds, White: Unlabelled. Right Column: Predicted probability given by the model.}
+    \label{fig:Probability_Preds_alt}
+\end{figure}
+
+\begin{figure}[!h]
+    \centering
+    \subfloat[\centering Low Dimension Representation of Adaboost Decision Surface]{{\includegraphics[width=0.48\textwidth]{statics/PCA_decision_surface_tr_12_te_3.png} }}
+    \qquad
+    \subfloat[\centering Low Dimension Representation of Logistic Regression Decision Surface]{{\includegraphics[width=0.48\textwidth]{statics/log_reg_decision_surface_tr_12_te_3.png} }}
+    \caption{Decision Surfaces of Adaboost (Top) and Logistic Regression (Bottom). }
+    \label{fig:decision_surface_alt}
+\end{figure}
+
+\begin{figure}[!h]
+    \centering
+    \subfloat[\centering Feature Importance of Adaboost for 1) model trained on full train and validation set. 2) Each CV fold 3) Average across CV folds.]{{\includegraphics[width=0.48\textwidth]{statics/Feature_importance_test_scheme1_tr_12_te_3.png} }}
+    \qquad
+    \subfloat[\centering Histograms of NDAI, Corr and SD, between mis-classified and correctly classified non-cloud data points. Blue histograms represent the distribution of features of points that are correctly classified and orange those that are mis-classified]{{\includegraphics[width=0.48\textwidth]{statics/feature_compare_true_neg_tr_12_te_3.png} }}
+    \qquad
+    \subfloat[\centering Train - Image 2]{{\includegraphics[width=0.48\textwidth]{feature_compare_true_pos_tr_12_te_3.png} }}
+    \caption{Histograms of NDAI, Corr and SD, between mis-classified and correctly classified cloud data points. Blue histograms represent the distribution of features of points that are correctly classified and orange those that are mis-classified}
+    \caption{Decision Surfaces of Adaboost (Top) and Logistic Regression (Bottom). }
+    \label{fig:decision_surface_alt}
+\end{figure}
+
+
 
 \section{Conclusion}
 As said, our algorithm requires expert labels to train, which is often time-consuming and not easily obtainable. The main concern is the relatively small set of images we have for training. As such, we will likely encounter future test images of highly different covariate distributions (data drift) and also different covariate-to-output relations (concept drift). The currently trained classifier will perform poorly on these edge cases. As such, unless we have a bigger training dataset, we are not confident of the model's ability to generalize to a large set of new images.
