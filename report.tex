@@ -117,23 +117,6 @@ In section 2.B, we covered the importance of features, which is also shown in Fi
 
 \section{Modeling}
 \subsection{Models Considered}
-For the next couple of sections, we compare 4 different classification methods, logistic regression (L2 regularized), CART, Random Forest, and Adaboost, on the cloud detection task. We provide some brief commentary on the assumptions of these well-known models. Besides, all these models assume i.i.d samples. We know that they are not due to spatial dependence. However, as mentioned previously, we have addressed the spatial correlation issue with our specially designed CVT procedures. 
-\begin{itemize}
-    \item \underline{Logistic Regression}. This model assumes a linear decision boundary between the two classes. According to our EDA, we should expect it to achieve a reasonable result since the data seems well separated linearly using just the 3 expert-engineered features. However, we cannot be sure about the high-dimensional space.
-    \item \underline{CART}. This model is non-linear and partitions the feature space into rectangles. In particular, it will perform worse if the decision boundary is not axis aligned. 
-    \item \underline{Random Forest}. This model is non-linear and uses bootstrap aggregation to reduce variance. Another important point is that the model works better when the set of trees trained is less correlated. One factor that affects this is if different covariates used are correlated. This is something that affects us since we use all 8 features, but we know that 3 of the features (NDAI, CORR, and SD) actually are transformations of the other 4.
-    \item \underline{Adaboost}. This model is also non-linear and uses boosting to overcome the limitations of a single weak classifier. In this case, we use a pruned CART tree, with only 1 depth, as the weak learner. Not many assumptions of this model affect our use of it.
-\end{itemize}
-
-
-\subsection{CV Results}
-\label{sec:cv_results}
-We use patch sizes of 55x55. In total, this produces 44 folds for cross-validation for test scheme 1. And 40 folds for cross-validation/testing in test scheme 2. We consider two metrics, accuracy and balanced accuracy, for computing the CV errors and test errors for both test schemes. Aggregated validation and test results are provided in Tables \ref{tab:scheme1_results} and \ref{tab:scheme2_results} for test schemes 1 and 2, respectively. In general, all the machine learning models perform well, far exceeding the simple baseline model. For test scheme 1, we can see that Adaboost performs the best in both cross-validation and in test set accuracy and balanced accuracy. This, however, is not the same in test scheme 2, where Random forest performs the best in both cross-validation and in test set accuracy and balanced accuracy. Interestingly, we can also see that the simple logistic regression model, the only linear model out of the candidate models, performs well in both test schemes, being the second-best-performing model in test scheme 1 and test scheme 2. This is likely due to the presence of expert-engineered features, which Tao's team has shown to be highly predictive of cloud presence through their ELCM algorithm.
-
-These tables also show the difference between test scheme 1 and test scheme 2. We can see that the CV results and the test results are very similar in test scheme 2 (as seen from Table \ref{tab:scheme2_results}), whereas the test results in Table \ref{tab:scheme1_results} are generally worse than the CV results. This reflects the fact that test scheme 2 eventually uses the same data set; hence, we expect both to produce similar scores. In contrast with test scheme 1, the test procedure (testing on 1 image) is quite different from the validation procedure. We see that test scheme 1 allows us to detect the overfitting of some models even when high CV accuracy is shown. This is the case in the Random Forest model, which had the second-best performing CV accuracy, but the poorest test accuracy.
-
-More insights can be gleaned from Figures \ref{fig:fold_results_1} and \ref{fig:fold_results_2}, which plot the individual fold errors. Things to note here are that the errors fluctuate a fair bit over the different folds. This is due to our patch-wise formation of the validation set, meaning that the labels in most patches will be similar. In subsequent sections, we systematically analyze whether our model makes errors on certain labels. 
-
 % Results 1 table
 \begin{table}
 \begin{center}
@@ -184,6 +167,23 @@ More insights can be gleaned from Figures \ref{fig:fold_results_1} and \ref{fig:
 \end{center}
 \end{table}
 
+For the next couple of sections, we compare 4 different classification methods, logistic regression (L2 regularized), CART, Random Forest, and Adaboost, on the cloud detection task. We provide some brief commentary on the assumptions of these well-known models. Besides, all these models assume i.i.d samples. We know that they are not due to spatial dependence. However, as mentioned previously, we have addressed the spatial correlation issue with our specially designed CVT procedures. 
+\begin{itemize}
+    \item \underline{Logistic Regression}. This model assumes a linear decision boundary between the two classes. According to our EDA, we should expect it to achieve a reasonable result since the data seems well separated linearly using just the 3 expert-engineered features. However, we cannot be sure about the high-dimensional space.
+    \item \underline{CART}. This model is non-linear and partitions the feature space into rectangles. In particular, it will perform worse if the decision boundary is not axis aligned. 
+    \item \underline{Random Forest}. This model is non-linear and uses bootstrap aggregation to reduce variance. Another important point is that the model works better when the set of trees trained is less correlated. One factor that affects this is if different covariates used are correlated. This is something that affects us since we use all 8 features, but we know that 3 of the features (NDAI, CORR, and SD) actually are transformations of the other 4.
+    \item \underline{Adaboost}. This model is also non-linear and uses boosting to overcome the limitations of a single weak classifier. In this case, we use a pruned CART tree, with only 1 depth, as the weak learner. Not many assumptions of this model affect our use of it.
+\end{itemize}
+
+
+\subsection{CV Results}
+\label{sec:cv_results}
+We use patch sizes of 55x55. In total, this produces 44 folds for cross-validation for test scheme 1. And 40 folds for cross-validation/testing in test scheme 2. We consider two metrics, accuracy and balanced accuracy, for computing the CV errors and test errors for both test schemes. Aggregated validation and test results are provided in Tables \ref{tab:scheme1_results} and \ref{tab:scheme2_results} for test schemes 1 and 2, respectively. In general, all the machine learning models perform well, far exceeding the simple baseline model. For test scheme 1, we can see that Adaboost performs the best in both cross-validation and in test set accuracy and balanced accuracy. This, however, is not the same in test scheme 2, where Random forest performs the best in both cross-validation and in test set accuracy and balanced accuracy. Interestingly, we can also see that the simple logistic regression model, the only linear model out of the candidate models, performs well in both test schemes, being the second-best-performing model in test scheme 1 and test scheme 2. This is likely due to the presence of expert-engineered features, which Tao's team has shown to be highly predictive of cloud presence through their ELCM algorithm.
+
+These tables also show the difference between test scheme 1 and test scheme 2. We can see that the CV results and the test results are very similar in test scheme 2 (as seen from Table \ref{tab:scheme2_results}), whereas the test results in Table \ref{tab:scheme1_results} are generally worse than the CV results. This reflects the fact that test scheme 2 eventually uses the same data set; hence, we expect both to produce similar scores. In contrast with test scheme 1, the test procedure (testing on 1 image) is quite different from the validation procedure. We see that test scheme 1 allows us to detect the overfitting of some models even when high CV accuracy is shown. This is the case in the Random Forest model, which had the second-best performing CV accuracy, but the poorest test accuracy.
+
+More insights can be gleaned from Figures \ref{fig:fold_results_1} and \ref{fig:fold_results_2}, which plot the individual fold errors. Things to note here are that the errors fluctuate a fair bit over the different folds. This is due to our patch-wise formation of the validation set, meaning that the labels in most patches will be similar. In subsequent sections, we systematically analyze whether our model makes errors on certain labels. 
+
 \begin{figure}[h]
 \centering
 \includegraphics[width=0.5\textwidth]{statics/test_Scheme_1_Fold_error.png}
@@ -200,31 +200,31 @@ More insights can be gleaned from Figures \ref{fig:fold_results_1} and \ref{fig:
 
 
 \subsection{ROC Plots}
-We plot the ROC curves generated for both the validation and test set(s) used in testing scheme 1 and testing scheme 2. These are displayed in Figure \ref{fig:ROC_curves scheme1} and \ref{fig:ROC_curves scheme2}. For cross validation ROC and test scheme 2 ROC, we plot the mean ROC curves over ROC curves generated by each fold. An ROC curve highlights the predicted true positive rate a model can achieve for a given false positive rate (or vice versa). With the cloud class as the 'true' class, a high true positive rate implies that a pixel that is actually a cloud will high a high chance of being classified as a cloud. This conflicts with the objective of a low false positive rate which measures how often non cloud pixels are predicted as clouds. 
-\\  
-\\
-Intuitively a model that has a more favourable trade off between the two is better performing, this can be measured by the area under curve metric. As before we see that for test scheme 2, the AUC from all 4 models between CV and test is very similar, this is due to the same reasons highlighted earlier about the similarity between the CV scheme and the testing scheme in test scheme 2. Under test scheme 2, Random forest has the most favourable trade off, with the best AUC. LR and Adaboost perform similarly, and CART has a noticeably lowered AUC as compared to the other 3 models. These results parallel what was observered in the metric based evaluation in section \ref{sec:cv_results}. Under test scheme 1, we see a noticeable difference in AUC under cross validation and under the test set, with the test set AUCs being higher for all models except CART. We see that under test scheme 1, Adaboost has the most favourable test AUC, which once again parallels the observations in section \ref{sec:cv_results}.
-\\
-\\
-Next, we fix a FPR rate, and compute the TPR rate based on the induced threshold needed to obtain that FPR rate, this allows an end user to fix an acceptable level of false positive rate. We demonstrate an example where the false positive rate is low, set at 0.3. We see that for this, most models are able to attain a TPR above 0.8 under both test schemes. Such a choice of a lower FPR would reflect for the case where it is more important to correctly capture the presence of all the cloud pixels, which might be the case if the model was applied some type of weather monitoring purpose.
-
-\begin{figure}%
+\begin{figure}
     \centering
-    \subfloat[\centering Test Scheme 1: CV ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme1_cv_roc.png} }}%
+    \subfloat[\centering Test Scheme 1: CV ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme1_cv_roc.png} }}
     \qquad
-    \subfloat[\centering Test Schema 1: Test ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme1_test_roc.png} }}%
-    \caption{Left: ROC curves per fold and Mean ROC curve for the 4 models. Right: ROC curves of the single held out test set for the 4 models. }%
-    \label{fig:ROC_curves scheme1}%
+    \subfloat[\centering Test Schema 1: Test ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme1_test_roc.png} }}
+    \caption{Left: ROC curves per fold and Mean ROC curve for the 4 models. Right: ROC curves of the single held-out test set for the 4 models.}
+    \label{fig:ROC_curves scheme1}
 \end{figure}
 
-\begin{figure}%
+\begin{figure}
     \centering
-    \subfloat[\centering Test Scheme 2: CV ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme2_cv_roc.png} }}%
+    \subfloat[\centering Test Scheme 2: CV ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme2_cv_roc.png} }}
     \qquad
-    \subfloat[\centering Test Schema 2: Nested Test ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme2_test_roc.png} }}%
-    \caption{Left: ROC curves per fold and Mean ROC curve for the 4 models. Right: ROC curves of each test fold and Mean ROC curves across all test folds for the 4 models. }%
-    \label{fig:ROC_curves scheme2}%
+    \subfloat[\centering Test Schema 2: Nested Test ROC]{{\includegraphics[width=8.5cm]{statics/test_Scheme2_test_roc.png} }}
+    \caption{Left: ROC curves per fold and Mean ROC curve for the 4 models. Right: ROC curves of each test fold and Mean ROC curves across all test folds for the 4 models.}
+    \label{fig:ROC_curves scheme2}
 \end{figure}
+
+We plot the ROC curves generated for both the validation and test set(s) used in testing scheme 1 and testing scheme 2. These are displayed in Figure \ref{fig:ROC_curves scheme1} and \ref{fig:ROC_curves scheme2}. For cross-validation ROC and test scheme 2 ROC, we plot the mean ROC curves over ROC curves generated by each fold. A ROC curve highlights the predicted true positive rate a model can achieve for a given false positive rate (or vice versa). With the cloud class as the "true" class, a high true positive rate implies that a pixel that is actually a cloud will high a high chance of being classified as a cloud. This conflicts with the objective of a low false positive rate which measures how often non-cloud pixels are predicted as clouds. Intuitively, a model with a more favorable trade-off between the two is better performing; this can be measured by the area under the curve metric (AUC).
+
+Under test scheme 1, we see a noticeable difference in AUC between cross-validation and testing, with the test set AUCs being higher for all models except CART. We see that under test scheme 1, Adaboost has the most favorable test AUC, which again matches the observations in section \ref{sec:cv_results}.
+
+For test scheme 2, the AUC from all 4 models between CV and test is very similar. This is due to the same reasons highlighted earlier about the similarity between the CV and testing in test scheme 2. Under test scheme 2, Random forest has the most favorable trade-off, with the best AUC. LR and Adaboost perform similarly, and CART has a noticeably lowered AUC compared to the other 3 models, which is not surprising. These results parallel what was observed in the metric-based evaluation in section \ref{sec:cv_results}.
+
+Next, we fix the False Positive Rate (FPR) and compute the True Positive Rate (TPR) based on the induced threshold needed to obtain that FPR rate. This allows an end user to fix an acceptable level of false positive rate. We demonstrate an example of a low false positive rate, set at 0.3. We see that for this, most models can attain a TPR above 0.8 under both test schemes. Such a choice of a lower FPR would reflect for the case where it is more important to correctly capture the presence of all the cloud pixels, which might be the case if the model was applied some weather monitoring purpose.
 
 
 \section{Diagnostics}
